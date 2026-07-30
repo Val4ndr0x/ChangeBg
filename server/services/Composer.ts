@@ -23,12 +23,18 @@ export class Composer {
   async compose(input: CompositorInput): Promise<Buffer> {
     const mode: BackgroundMode = input.backgroundMode ?? 'black'
 
+    console.log(`[Composer] Iniciando composición — modo: ${mode}`)
+    console.log(`[Composer] Dimensiones persona: ${input.personWidth}x${input.personHeight}`)
+
     const [bgBuffer, frameBuffer] = await Promise.all([
       mode === 'original-overlay' && input.originalImage
         ? this.loadOriginalWithOverlay(input.originalImage, input.personWidth, input.personHeight)
         : this.loadBackground(input.personWidth, input.personHeight),
       this.loadFrame(input.personWidth, input.personHeight)
     ])
+
+    const bgMeta = await sharp(bgBuffer).metadata()
+    console.log(`[Composer] Background listo para composición: ${bgMeta.width}x${bgMeta.height}`)
 
     const result = await sharp(bgBuffer)
       .composite([
@@ -44,14 +50,43 @@ export class Composer {
       })
       .toBuffer()
 
+    const resultMeta = await sharp(result).metadata()
+    console.log(`[Composer] Composición final: ${resultMeta.width}x${resultMeta.height}`)
+
     return result
   }
 
+  private async normalizeOrientation(imageBuffer: Buffer, label: string): Promise<Buffer> {
+    const meta = await sharp(imageBuffer).metadata()
+    const orientation = meta.orientation ?? 1
+
+    console.log(`[Composer] ${label} — antes: ${meta.width}x${meta.height}, orientación EXIF: ${orientation}`)
+
+    if (orientation !== 1) {
+      const normalized = await sharp(imageBuffer)
+        .rotate()
+        .jpeg({ quality: 100 })
+        .toBuffer()
+
+      const newMeta = await sharp(normalized).metadata()
+      console.log(`[Composer] ${label} — después de rotate(): ${newMeta.width}x${newMeta.height}, orientación: 1 (normalizada)`)
+      return normalized
+    }
+
+    console.log(`[Composer] ${label} — sin EXIF que corregir, se mantiene igual`)
+    return imageBuffer
+  }
+
   private async loadOriginalWithOverlay(original: Buffer, width: number, height: number): Promise<Buffer> {
-    const zoomed = await sharp(original)
+    const normalizedOriginal = await this.normalizeOrientation(original, 'Original (overlay)')
+
+    const zoomed = await sharp(normalizedOriginal)
       .resize(Math.round(width * BG_ZOOM_SCALE), Math.round(height * BG_ZOOM_SCALE), { fit: 'cover', position: 'center' })
       .resize(width, height, { fit: 'cover', position: 'center' })
       .toBuffer()
+
+    const zoomMeta = await sharp(zoomed).metadata()
+    console.log(`[Composer] Overlay zoom aplicado: ${zoomMeta.width}x${zoomMeta.height}`)
 
     const overlay = await sharp({
       create: {
@@ -62,20 +97,32 @@ export class Composer {
       }
     }).png().toBuffer()
 
-    return sharp(zoomed)
+    const result = await sharp(zoomed)
       .composite([{ input: overlay, top: 0, left: 0 }])
       .jpeg()
       .toBuffer()
+
+    const resultMeta = await sharp(result).metadata()
+    console.log(`[Composer] Overlay + composición: ${resultMeta.width}x${resultMeta.height}`)
+
+    return result
   }
 
   private async loadBackground(width: number, height: number): Promise<Buffer> {
     try {
       await fs.access(this.backgroundPath)
-      const bg = await sharp(this.backgroundPath)
+
+      const bgFileBuffer = await fs.readFile(this.backgroundPath)
+      const normalizedBg = await this.normalizeOrientation(bgFileBuffer, 'Background file')
+
+      console.log(`[Composer] Redimensionando background a: ${width}x${height}`)
+
+      const bg = await sharp(normalizedBg)
         .resize(width, height, { fit: 'cover', position: 'center' })
         .toBuffer()
       return bg
     } catch {
+      console.log(`[Composer] Background no encontrado, usando negro sólido: ${width}x${height}`)
       return sharp({
         create: {
           width,
