@@ -1,23 +1,108 @@
 <template>
-  <div class="min-h-screen bg-zinc-950 text-zinc-100">
-    <header class="border-b border-zinc-800">
-      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-          </svg>
+  <div class="relative min-h-screen overflow-x-hidden bg-brand-navy text-zinc-100">
+    <div class="pointer-events-none fixed inset-0">
+      <div class="absolute -top-32 -right-32 w-[480px] h-[480px] rounded-full bg-brand-cyan/10 blur-3xl" />
+      <div class="absolute top-1/3 -left-44 w-[420px] h-[420px] rounded-full bg-brand-yellow/5 blur-3xl" />
+      <div class="absolute bottom-0 right-1/4 w-[380px] h-[380px] rounded-full bg-brand-red/10 blur-3xl" />
+    </div>
+
+    <header class="sticky top-0 z-40 border-b border-brand-cyan/15 bg-brand-navy/80 backdrop-blur-md">
+      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+        <img
+          :src="logoUrl"
+          alt="Logo Liga de Porrismo de Cundinamarca"
+          class="w-11 h-11 rounded-full ring-2 ring-brand-yellow/70 shadow-lg shadow-brand-navy/60"
+        />
+        <div class="leading-tight">
+          <h1 class="font-display text-lg font-extrabold tracking-tight text-white">
+            Photo Liga <span class="text-brand-yellow">LPC</span>
+          </h1>
+          <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-cyan">
+            <svg class="w-3 h-3 text-brand-yellow" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+            </svg>
+            Liga de Porrismo de Cundinamarca
+          </span>
         </div>
-        <h1 class="text-lg font-semibold">ChangeBG</h1>
-        <span class="text-xs text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded-md">Profesional</span>
       </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 py-12">
-      <div class="text-center mb-10">
-        <h2 class="text-3xl font-bold tracking-tight">Cambia el fondo de tus fotos</h2>
-        <p class="mt-2 text-zinc-400">Resultados con calidad de edición profesional</p>
-      </div>
+    <section class="relative overflow-hidden">
+      <div
+        class="absolute inset-x-0 bottom-0 h-24 opacity-20 stripe-energy"
+      />
+      <svg
+        class="sparkle absolute left-[8%] top-14 w-6 h-6 text-brand-yellow"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+      </svg>
+      <svg
+        class="sparkle-delay absolute right-[10%] top-24 w-5 h-5 text-brand-cyan"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+      </svg>
+      <svg
+        class="sparkle-delay-2 absolute right-[22%] top-10 w-4 h-4 text-brand-red"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+      </svg>
 
+      <div class="relative max-w-5xl mx-auto px-4 pt-12 pb-14 text-center">
+        <p
+          class="inline-flex items-center gap-2 rounded-full border border-brand-cyan/30 bg-brand-cyan/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-brand-cyan"
+        >
+          <svg class="w-3.5 h-3.5 text-brand-yellow" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+          </svg>
+          Temporada LPC · Cundinamarca
+        </p>
+
+        <h2 class="mt-6 font-display text-4xl sm:text-6xl font-extrabold italic tracking-tight text-white">
+          Vive la
+          <span class="text-brand-yellow not-italic">nueva</span>
+          experiencia
+        </h2>
+
+        <p class="mx-auto mt-4 max-w-xl text-base sm:text-lg text-zinc-400">
+          Resultados con calidad de edición profesional para tu equipo y tus atletas.
+        </p>
+
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <span
+            class="inline-flex items-center gap-2 rounded-full bg-brand-navy-light/60 px-4 py-2 text-sm font-semibold text-zinc-200 ring-1 ring-brand-cyan/25"
+          >
+            <svg class="w-4 h-4 text-brand-yellow" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+            </svg>
+            Edición profesional
+          </span>
+          <span
+            class="inline-flex items-center gap-2 rounded-full bg-brand-navy-light/60 px-4 py-2 text-sm font-semibold text-zinc-200 ring-1 ring-brand-cyan/25"
+          >
+            <svg class="w-4 h-4 text-brand-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Resultado en segundos
+          </span>
+          <span
+            class="inline-flex items-center gap-2 rounded-full bg-brand-navy-light/60 px-4 py-2 text-sm font-semibold text-zinc-200 ring-1 ring-brand-cyan/25"
+          >
+            <svg class="w-4 h-4 text-brand-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Descarga inmediata
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <main class="relative max-w-3xl mx-auto px-4 pb-16">
       <div v-if="!processor.resultUrl.value" class="flex flex-col items-center gap-8">
         <ImageUploader
           :preview-url="processor.previewUrl.value"
@@ -33,12 +118,12 @@
         >
           <label class="flex items-center gap-3 cursor-pointer select-none">
             <span
-              class="text-sm font-medium"
-              :class="processor.backgroundMode.value === 'black' ? 'text-zinc-100' : 'text-zinc-500'"
+              class="text-sm font-semibold"
+              :class="processor.backgroundMode.value === 'black' ? 'text-white' : 'text-zinc-500'"
             >Fondo negro</span>
             <div
               class="relative w-12 h-6 rounded-full transition-colors"
-              :class="processor.backgroundMode.value === 'original-overlay' ? 'bg-blue-600' : 'bg-zinc-700'"
+              :class="processor.backgroundMode.value === 'original-overlay' ? 'bg-brand-cyan' : 'bg-zinc-600'"
               @click="processor.backgroundMode.value = processor.backgroundMode.value === 'black' ? 'original-overlay' : 'black'"
             >
               <div
@@ -47,16 +132,19 @@
               />
             </div>
             <span
-              class="text-sm font-medium"
-              :class="processor.backgroundMode.value === 'original-overlay' ? 'text-zinc-100' : 'text-zinc-500'"
+              class="text-sm font-semibold"
+              :class="processor.backgroundMode.value === 'original-overlay' ? 'text-white' : 'text-zinc-500'"
             >Fondo original</span>
           </label>
 
           <button
             type="button"
-            class="px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-medium rounded-xl transition-colors"
+            class="inline-flex items-center gap-2 rounded-xl bg-brand-yellow px-8 py-3 font-display font-bold text-brand-navy shadow-lg shadow-brand-yellow/20 transition hover:brightness-105 hover:shadow-brand-yellow/30 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500 disabled:shadow-none"
             @click="processor.process()"
           >
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+            </svg>
             Procesar imagen
           </button>
         </div>
@@ -70,9 +158,13 @@
       />
     </main>
 
-    <footer class="border-t border-zinc-800 mt-24">
-      <div class="max-w-5xl mx-auto px-4 py-6 text-center text-sm text-zinc-600">
-        ChangeBG — Procesamiento profesional de imágenes
+    <footer class="relative border-t border-brand-cyan/15">
+      <div class="max-w-5xl mx-auto px-4 py-8 text-center">
+        <p class="text-sm font-semibold text-zinc-400">
+          Photo Liga <span class="text-brand-yellow">LPC</span>
+          · Liga de Porrismo de Cundinamarca
+        </p>
+        <p class="mt-1 text-xs text-zinc-600">Procesamiento profesional de imágenes</p>
       </div>
     </footer>
 
@@ -81,9 +173,45 @@
 </template>
 
 <script setup lang="ts">
+import logoUrl from '../assets/img/logo.png'
+
 const processor = useImageProcessor()
 
 function onFileSelected(file: File) {
   processor.setFile(file)
 }
 </script>
+
+<style scoped>
+.stripe-energy {
+  background: repeating-linear-gradient(
+    -45deg,
+    #fff200 0 26px,
+    #00aeef 26px 52px,
+    #ed2024 52px 78px
+  );
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.15));
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.15));
+}
+
+@keyframes sparkle-float {
+  0%, 100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.15) rotate(12deg);
+  }
+}
+
+.sparkle {
+  animation: sparkle-float 3.2s ease-in-out infinite;
+}
+
+.sparkle-delay {
+  animation: sparkle-float 3.6s ease-in-out 0.6s infinite;
+}
+
+.sparkle-delay-2 {
+  animation: sparkle-float 4s ease-in-out 1.2s infinite;
+}
+</style>

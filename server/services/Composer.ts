@@ -93,7 +93,7 @@ export class Composer {
         width,
         height,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0.7 }
+        background: { r: 0, g: 0, b: 0, alpha: 0.8 }
       }
     }).png().toBuffer()
 

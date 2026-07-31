@@ -24,7 +24,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
     const mimeType = imageField.type ?? ''
 
     if (!ALLOWED_MIME_TYPES.includes(mimeType as any)) {
-      return { success: false, message: `Formato no soportado: ${mimeType}. Usa JPG, PNG o WebP.`, code: 'UNSUPPORTED_FORMAT' }
+      return { success: false, message: `Formato no soportado: ${mimeType}. Usa JPG, PNG, WebP o HEIC.`, code: 'UNSUPPORTED_FORMAT' }
     }
 
     if (imageBuffer.length > MAX_FILE_SIZE) {

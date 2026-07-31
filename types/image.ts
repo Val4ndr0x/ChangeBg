@@ -34,7 +34,7 @@ export interface ProcessingError {
 
 export type ApiResponse = ProcessingResult | ProcessingError
 
-export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
+export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'] as const
 export type AllowedMimeType = typeof ALLOWED_MIME_TYPES[number]
 
 export const MAX_FILE_SIZE = 30 * 1024 * 1024

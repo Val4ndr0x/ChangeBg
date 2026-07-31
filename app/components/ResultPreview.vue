@@ -1,17 +1,27 @@
 <template>
   <div class="flex flex-col items-center gap-6 w-full">
-    <div class="relative w-full max-w-2xl rounded-2xl overflow-hidden bg-zinc-900/60 ring-1 ring-zinc-800">
+    <div
+      class="inline-flex items-center gap-2 rounded-full bg-brand-yellow/10 px-4 py-1.5 text-sm font-bold text-brand-yellow ring-1 ring-brand-yellow/30"
+    >
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+      </svg>
+      ¡Listo! Tu foto está lista
+    </div>
+
+    <div class="relative w-full max-w-2xl rounded-3xl overflow-hidden bg-brand-navy-light/70 ring-2 ring-brand-cyan/25 shadow-xl shadow-brand-navy/60">
       <img
         :src="imageUrl"
         alt="Resultado"
         class="w-full h-auto max-h-[600px] object-contain"
       />
+      <div class="pointer-events-none absolute inset-x-0 top-0 h-1 stripe-energy" />
     </div>
 
-    <div class="flex gap-4">
+    <div class="flex flex-wrap justify-center gap-4">
       <button
         type="button"
-        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-colors flex items-center gap-2"
+        class="inline-flex items-center gap-2 rounded-xl bg-brand-yellow px-6 py-2.5 font-display font-bold text-brand-navy shadow-lg shadow-brand-yellow/20 transition hover:brightness-105"
         @click="$emit('download')"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,7 +32,7 @@
 
       <button
         type="button"
-        class="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl transition-colors flex items-center gap-2"
+        class="inline-flex items-center gap-2 rounded-xl bg-brand-navy-light px-6 py-2.5 font-semibold text-brand-cyan ring-1 ring-brand-cyan/40 transition hover:bg-brand-cyan/10"
         @click="$emit('reset')"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,3 +54,15 @@ defineEmits<{
   reset: []
 }>()
 </script>
+
+<style scoped>
+.stripe-energy {
+  background: repeating-linear-gradient(
+    90deg,
+    #fff200 0 26px,
+    #00aeef 26px 52px,
+    #ed2024 52px 78px
+  );
+  opacity: 0.7;
+}
+</style>

@@ -1,12 +1,12 @@
 <template>
   <div
-    class="relative flex flex-col items-center justify-center w-full min-h-[320px] rounded-2xl border-2 border-dashed transition-colors cursor-pointer"
+    class="relative flex flex-col items-center justify-center w-full min-h-[320px] rounded-3xl border-2 border-dashed transition-colors cursor-pointer"
     :class="[
       isDragOver
-        ? 'border-blue-400 bg-blue-50/10'
+        ? 'border-brand-yellow bg-brand-yellow/5 ring-4 ring-brand-yellow/10'
         : hasError
-          ? 'border-red-400 bg-red-50/5'
-          : 'border-zinc-600 hover:border-zinc-400 bg-zinc-900/40'
+          ? 'border-brand-red bg-brand-red/5'
+          : 'border-brand-cyan/40 hover:border-brand-cyan bg-brand-navy-light/50'
     ]"
     @dragover.prevent="isDragOver = true"
     @dragleave.prevent="isDragOver = false"
@@ -23,16 +23,22 @@
 
     <template v-if="!previewUrl">
       <div class="flex flex-col items-center gap-4 p-8 text-center">
-        <div class="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center">
-          <svg class="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <div class="relative w-16 h-16 rounded-full bg-brand-navy flex items-center justify-center ring-2 ring-brand-cyan/40">
+          <svg class="w-7 h-7 text-brand-yellow" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
           </svg>
+          <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-cyan ring-2 ring-brand-navy" />
         </div>
         <div>
-          <p class="text-lg font-medium text-zinc-300">Arrastra tu foto aquí</p>
-          <p class="mt-1 text-sm text-zinc-500">o haz clic para seleccionar un archivo</p>
+          <p class="font-display text-lg font-bold text-white">Arrastra tu foto aquí</p>
+          <p class="mt-1 text-sm text-zinc-400">o haz clic para seleccionar un archivo</p>
         </div>
-        <p class="text-xs text-zinc-600">JPG, PNG o WebP · Máx 30MB</p>
+        <div class="flex items-center gap-2">
+          <span class="rounded-full bg-brand-navy px-3 py-1 text-xs font-semibold text-brand-cyan ring-1 ring-brand-cyan/25">JPG</span>
+          <span class="rounded-full bg-brand-navy px-3 py-1 text-xs font-semibold text-brand-cyan ring-1 ring-brand-cyan/25">PNG</span>
+          <span class="rounded-full bg-brand-navy px-3 py-1 text-xs font-semibold text-brand-cyan ring-1 ring-brand-cyan/25">WebP</span>
+          <span class="text-xs text-zinc-500">· Máx 30MB</span>
+        </div>
       </div>
     </template>
 
@@ -44,11 +50,11 @@
       />
       <button
         type="button"
-        class="absolute top-6 right-6 w-8 h-8 rounded-full bg-zinc-900/80 flex items-center justify-center hover:bg-zinc-800 transition-colors"
+        class="absolute top-6 right-6 w-8 h-8 rounded-full bg-brand-navy/90 flex items-center justify-center text-brand-red hover:bg-brand-navy ring-1 ring-brand-red/40 transition-colors"
         :disabled="disabled"
         @click.stop="resetImage"
       >
-        <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
@@ -56,9 +62,9 @@
 
     <div
       v-if="hasError"
-      class="absolute bottom-0 left-0 right-0 px-4 py-3 bg-red-500/10 border-t border-red-500/20 rounded-b-2xl"
+      class="absolute bottom-0 left-0 right-0 px-4 py-3 bg-brand-red/10 border-t border-brand-red/25 rounded-b-3xl"
     >
-      <p class="text-sm text-red-400">{{ errorMessage }}</p>
+      <p class="text-sm font-medium text-brand-red">{{ errorMessage }}</p>
     </div>
   </div>
 </template>
