@@ -77,6 +77,24 @@ export function useImageProcessor() {
     document.body.removeChild(link)
   }
 
+  function print(): void {
+    if (!resultUrl.value) return
+    const w = window.open('', '_blank', 'width=800,height=600')
+    if (!w) {
+      error.value = 'Permite ventanas emergentes para imprimir.'
+      return
+    }
+    const html = `<!doctype html><html><head><title>Imprimir</title><style>
+      *{margin:0;padding:0}
+      html,body{height:100%}
+      body{display:flex;align-items:center;justify-content:center;background:#fff}
+      img{max-width:100%;max-height:100%;}
+    </style></head><body><img src="${resultUrl.value}" onload="this.ownerDocument.defaultView.print();"/></body></html>`
+    w.document.open()
+    w.document.write(html)
+    w.document.close()
+  }
+
   function reset(): void {
     if (previewUrl.value) {
       URL.revokeObjectURL(previewUrl.value)
@@ -104,6 +122,7 @@ export function useImageProcessor() {
     process,
     setFile,
     download,
+    print,
     reset
   }
 }

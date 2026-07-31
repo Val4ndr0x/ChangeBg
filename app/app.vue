@@ -148,6 +148,7 @@
         v-else
         :image-url="processor.resultUrl.value"
         @download="processor.download()"
+        @print="processor.print()"
         @reset="processor.reset()"
       />
     </main>
