@@ -5,7 +5,7 @@ export interface ProcessedImage {
   format: string
 }
 
-export type BackgroundMode = 'black' | 'original-overlay'
+export type BackgroundMode = 'black' | 'original-overlay' | 'original-offset'
 
 export interface BackgroundRemoverResult {
   pngBuffer: Buffer

@@ -1,22 +1,31 @@
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { pipeline } from 'node:stream/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const MODEL_DIR = resolve(__dirname, '..', 'server', 'models')
-const MODEL_PATH = resolve(MODEL_DIR, 'birefnet.onnx')
 
-const MODEL_URL = 'https://github.com/ZhengPeng7/BiRefNet/releases/download/v1/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx'
+const MODELS = [
+  {
+    name: 'BiRefNet (recorte de persona)',
+    file: 'birefnet.onnx',
+    url: 'https://github.com/ZhengPeng7/BiRefNet/releases/download/v1/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx'
+  },
+  {
+    name: 'YuNet (detección de rostro)',
+    file: 'face_detection_yunet.onnx',
+    url: 'https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx'
+  }
+]
 
-async function main() {
-  mkdirSync(MODEL_DIR, { recursive: true })
+async function downloadModel(model) {
+  const MODEL_PATH = resolve(MODEL_DIR, model.file)
 
-  console.log(`Downloading BiRefNet ONNX model...`)
-  console.log(`URL: ${MODEL_URL}`)
+  console.log(`\nDownloading ${model.name}...`)
+  console.log(`URL: ${model.url}`)
   console.log(`Destination: ${MODEL_PATH}`)
 
-  const response = await fetch(MODEL_URL)
+  const response = await fetch(model.url)
 
   if (!response.ok) {
     throw new Error(`Download failed (HTTP ${response.status})`)
@@ -49,8 +58,17 @@ async function main() {
   writeFileSync(MODEL_PATH, buffer)
 
   const totalMB = (buffer.length / 1024 / 1024).toFixed(1)
-  console.log(`\n✓ Model downloaded: ${totalMB}MB`)
-  console.log(`  ${MODEL_PATH}`)
+  console.log(`✓ ${model.name} downloaded: ${totalMB}MB`)
+}
+
+async function main() {
+  mkdirSync(MODEL_DIR, { recursive: true })
+
+  for (const model of MODELS) {
+    await downloadModel(model)
+  }
+
+  console.log('\n✓ All models downloaded')
 }
 
 main().catch((err) => {

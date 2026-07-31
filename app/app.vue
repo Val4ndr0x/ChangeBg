@@ -116,26 +116,20 @@
           v-if="processor.previewUrl.value && !processor.isProcessing.value"
           class="flex flex-col items-center gap-4"
         >
-          <label class="flex items-center gap-3 cursor-pointer select-none">
-            <span
-              class="text-sm font-semibold"
-              :class="processor.backgroundMode.value === 'black' ? 'text-white' : 'text-zinc-500'"
-            >Fondo negro</span>
-            <div
-              class="relative w-12 h-6 rounded-full transition-colors"
-              :class="processor.backgroundMode.value === 'original-overlay' ? 'bg-brand-cyan' : 'bg-zinc-600'"
-              @click="processor.backgroundMode.value = processor.backgroundMode.value === 'black' ? 'original-overlay' : 'black'"
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <button
+              v-for="option in backgroundOptions"
+              :key="option.value"
+              type="button"
+              class="rounded-full px-4 py-2 text-sm font-semibold transition"
+              :class="processor.backgroundMode.value === option.value
+                ? 'bg-brand-cyan text-brand-navy shadow-lg shadow-brand-cyan/25'
+                : 'bg-brand-navy-light/60 text-zinc-300 ring-1 ring-brand-cyan/25 hover:text-white'"
+              @click="processor.backgroundMode.value = option.value"
             >
-              <div
-                class="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow"
-                :class="processor.backgroundMode.value === 'original-overlay' ? 'translate-x-6' : 'translate-x-0.5'"
-              />
-            </div>
-            <span
-              class="text-sm font-semibold"
-              :class="processor.backgroundMode.value === 'original-overlay' ? 'text-white' : 'text-zinc-500'"
-            >Fondo original</span>
-          </label>
+              {{ option.label }}
+            </button>
+          </div>
 
           <button
             type="button"
@@ -174,8 +168,15 @@
 
 <script setup lang="ts">
 import logoUrl from '../assets/img/logo.png'
+import type { BackgroundMode } from '../types/image'
 
 const processor = useImageProcessor()
+
+const backgroundOptions: { value: BackgroundMode; label: string }[] = [
+  { value: 'black', label: 'Fondo estándar' },
+  { value: 'original-overlay', label: 'Fondo original' },
+  { value: 'original-offset', label: 'Fondo ampliado' }
+]
 
 function onFileSelected(file: File) {
   processor.setFile(file)

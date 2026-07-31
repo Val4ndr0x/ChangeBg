@@ -3,6 +3,7 @@ import sharp from 'sharp'
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { BackgroundRemover } from './BackgroundRemover'
+import { MatteRefiner } from './MatteRefiner'
 import type { BackgroundRemoverResult } from '../../types/image'
 
 const MODEL_PATH = path.resolve('server/models/birefnet.onnx')
@@ -11,10 +12,9 @@ const MODEL_INPUT_SIZE = 1024
 const IMAGENET_MEAN = [0.485, 0.456, 0.406]
 const IMAGENET_STD = [0.229, 0.224, 0.225]
 
-const CORE_THRESHOLD = 0.5
-const DILATION_PIXELS = 1
-const FEATHER_SIGMA = 2.0
-const EDGE_BLEED_EROSION = 2
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v
+}
 
 export class BiRefNetService extends BackgroundRemover {
   private session: InferenceSession | null = null
@@ -180,196 +180,149 @@ export class BiRefNetService extends BackgroundRemover {
     return out
   }
 
-  private erode3x3(
+  private upscaleMask(
     mask: Float32Array,
-    width: number,
-    height: number
+    srcW: number,
+    srcH: number,
+    dstW: number,
+    dstH: number
   ): Float32Array {
-    const out = new Float32Array(mask.length)
+    const tmp = new Float32Array(dstW * srcH)
+    const sx = srcW / dstW
+    for (let y = 0; y < srcH; y++) {
+      const srcRow = y * srcW
+      const dstRow = y * dstW
+      for (let x = 0; x < dstW; x++) {
+        const fx = clamp((x + 0.5) * sx - 0.5, 0, srcW - 1)
+        const x0 = Math.floor(fx)
+        const t = fx - x0
+        const xa = x0
+        const xb = x0 + 1 < srcW ? x0 + 1 : x0
+        tmp[dstRow + x] = mask[srcRow + xa] * (1 - t) + mask[srcRow + xb] * t
+      }
+    }
 
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        let min = 1.0
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            const nx = x + dx
-            const ny = y + dy
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-              const v = mask[ny * width + nx]
-              if (v < min) min = v
-            }
-          }
-        }
-        out[y * width + x] = min
+    const out = new Float32Array(dstW * dstH)
+    const sy = srcH / dstH
+    for (let y = 0; y < dstH; y++) {
+      const fy = clamp((y + 0.5) * sy - 0.5, 0, srcH - 1)
+      const y0 = Math.floor(fy)
+      const t = fy - y0
+      const rowA = y0 * dstW
+      const rowB = (y0 + 1 < srcH ? y0 + 1 : y0) * dstW
+      const dstRow = y * dstW
+      for (let x = 0; x < dstW; x++) {
+        out[dstRow + x] = tmp[rowA + x] * (1 - t) + tmp[rowB + x] * t
       }
     }
 
     return out
   }
 
-  private dilate3x3(
-    mask: Float32Array,
-    width: number,
-    height: number
-  ): Float32Array {
-    const out = new Float32Array(mask.length)
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        let max = 0
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            const nx = x + dx
-            const ny = y + dy
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-              const v = mask[ny * width + nx]
-              if (v > max) max = v
-            }
-          }
-        }
-        out[y * width + x] = max
-      }
-    }
-
-    return out
-  }
-
-  private async upscaleMask(
-    mask: Float32Array,
-    contentW: number,
-    contentH: number,
-    targetW: number,
-    targetH: number
-  ): Promise<Float32Array> {
-    const source = Buffer.alloc(mask.length)
-    for (let i = 0; i < mask.length; i++) {
-      source[i] = Math.round(Math.max(0, Math.min(1, mask[i])) * 255)
-    }
-
-    const resized = await sharp(source, { raw: { width: contentW, height: contentH, channels: 1 } })
-      .toColourspace('b-w')
-      .resize(targetW, targetH, { fit: 'fill', kernel: 'lanczos3' })
-      .raw()
-      .toBuffer()
-
-    const out = new Float32Array(resized.length)
-    for (let i = 0; i < resized.length; i++) {
-      out[i] = resized[i] / 255
-    }
-
-    return out
-  }
-
-  private async featherAlpha(
-    mask: Float32Array,
+  private shapeAlpha(
+    alpha: Float32Array,
     width: number,
     height: number,
-    sigma: number
-  ): Promise<Float32Array> {
-    const source = Buffer.alloc(mask.length)
-    for (let i = 0; i < mask.length; i++) {
-      source[i] = Math.round(Math.max(0, Math.min(1, mask[i])) * 255)
+    gain: number
+  ): Float32Array {
+    const out = new Float32Array(alpha.length)
+    for (let i = 0; i < alpha.length; i++) {
+      out[i] = clamp((alpha[i] - 0.5) * gain + 0.5, 0, 1)
     }
-
-    const blurred = await sharp(source, { raw: { width, height, channels: 1 } })
-      .toColourspace('b-w')
-      .blur(sigma)
-      .raw()
-      .toBuffer()
-
-    const out = new Float32Array(blurred.length)
-    for (let i = 0; i < blurred.length; i++) {
-      out[i] = blurred[i] / 255
-    }
-
     return out
   }
 
-  private buildFinalAlpha(
-    maskSoft: Float32Array,
-    feathered: Float32Array,
-    width: number,
-    height: number
-  ): { alpha: Float32Array; core: Float32Array } {
-    const binary = new Float32Array(maskSoft.length)
-    for (let i = 0; i < maskSoft.length; i++) {
-      binary[i] = maskSoft[i] > CORE_THRESHOLD ? 1 : 0
+  private edgeGain(
+    alpha: Float32Array,
+    w: number,
+    h: number,
+    scale: number
+  ): number {
+    let gradAcc = 0
+    let gradN = 0
+    for (let i = 1; i < alpha.length; i++) {
+      const a = alpha[i]
+      const b = alpha[i - 1]
+      const inBand = (a > 0.05 && a < 0.95) || (b > 0.05 && b < 0.95)
+      if (inBand) {
+        gradAcc += Math.abs(a - b)
+        gradN++
+      }
     }
-
-    const core = this.erode3x3(binary, width, height)
-
-    const alpha = new Float32Array(feathered.length)
-    for (let i = 0; i < feathered.length; i++) {
-      const value = Math.max(0, Math.min(1, feathered[i]))
-      alpha[i] = core[i] > 0.5 ? 1 : value
-    }
-
-    return { alpha, core }
+    const meanGrad = gradN > 0 ? gradAcc / gradN : 0.25
+    const bandModelPx = meanGrad > 0.01 ? 1 / meanGrad : 4
+    const bandFullPx = bandModelPx * scale
+    return clamp(bandFullPx / 2.2, 0.8, 2.2)
   }
 
   private decontaminateEdge(
     rgb: Buffer,
     alpha: Float32Array,
-    core: Float32Array,
     width: number,
     height: number
   ): Buffer {
     const size = width * height
     const out = Buffer.from(rgb)
+    const CORE = 0.98
+    const INF = 1 << 28
+    const rC = new Uint8Array(size)
+    const gC = new Uint8Array(size)
+    const bC = new Uint8Array(size)
+    const dist = new Int32Array(size).fill(INF)
 
-    let source = core
-    for (let i = 0; i < EDGE_BLEED_EROSION; i++) {
-      source = this.erode3x3(source, width, height)
-    }
-
-    let pending: number[] = []
     for (let i = 0; i < size; i++) {
-      if (source[i] === 0 && alpha[i] > 0) {
-        pending.push(i)
+      if (alpha[i] >= CORE) {
+        dist[i] = 0
+        rC[i] = rgb[i * 3]
+        gC[i] = rgb[i * 3 + 1]
+        bC[i] = rgb[i * 3 + 2]
       }
     }
 
-    const MAX_PASSES = 32
-    let passes = 0
-    while (pending.length > 0 && passes < MAX_PASSES) {
-      passes++
-      const next: number[] = []
-      const filled: number[] = []
-      for (const idx of pending) {
-        const x = idx % width
-        const y = Math.floor(idx / width)
-        let r = 0
-        let g = 0
-        let b = 0
-        let n = 0
-        for (let dy = -1; dy <= 1; dy++) {
-          const ny = y + dy
-          if (ny < 0 || ny >= height) continue
-          for (let dx = -1; dx <= 1; dx++) {
-            const nx = x + dx
-            if (nx < 0 || nx >= width) continue
-            const ni = ny * width + nx
-            if (source[ni] > 0.5) {
-              r += out[ni * 3]
-              g += out[ni * 3 + 1]
-              b += out[ni * 3 + 2]
-              n++
-            }
-          }
-        }
-        if (n > 0) {
-          out[idx * 3] = Math.round(r / n)
-          out[idx * 3 + 1] = Math.round(g / n)
-          out[idx * 3 + 2] = Math.round(b / n)
-          filled.push(idx)
-        } else {
-          next.push(idx)
+    const relax = (i: number, ni: number, cost: number): void => {
+      if (dist[ni] === INF) return
+      const nd = dist[ni] + cost
+      if (nd < dist[i]) {
+        dist[i] = nd
+        rC[i] = rC[ni]
+        gC[i] = gC[ni]
+        bC[i] = bC[ni]
+      }
+    }
+
+    for (let y = 0; y < height; y++) {
+      const row = y * width
+      for (let x = 0; x < width; x++) {
+        const i = row + x
+        if (x > 0) relax(i, i - 1, 3)
+        if (y > 0) {
+          if (x > 0) relax(i, i - width - 1, 4)
+          relax(i, i - width, 3)
+          if (x < width - 1) relax(i, i - width + 1, 4)
         }
       }
-      for (const idx of filled) {
-        source[idx] = 1
+    }
+
+    for (let y = height - 1; y >= 0; y--) {
+      const row = y * width
+      for (let x = width - 1; x >= 0; x--) {
+        const i = row + x
+        if (x < width - 1) relax(i, i + 1, 3)
+        if (y < height - 1) {
+          if (x < width - 1) relax(i, i + width + 1, 4)
+          relax(i, i + width, 3)
+          if (x > 0) relax(i, i + width - 1, 4)
+        }
       }
-      pending = next
+    }
+
+    for (let i = 0; i < size; i++) {
+      const a = alpha[i]
+      if (a >= 0.02 && a < CORE) {
+        out[i * 3] = rC[i]
+        out[i * 3 + 1] = gC[i]
+        out[i * 3 + 2] = bC[i]
+      }
     }
 
     return out
@@ -383,23 +336,28 @@ export class BiRefNetService extends BackgroundRemover {
     width: number,
     height: number
   ): Promise<Buffer> {
-    const [pixels, maskFull] = await Promise.all([
-      sharp(imageBuffer)
-        .resize(width, height, { fit: 'fill', kernel: 'lanczos3' })
-        .raw()
-        .toBuffer(),
-      this.upscaleMask(maskSoft, contentW, contentH, width, height)
-    ])
+    const pixels = await sharp(imageBuffer)
+      .resize(width, height, { fit: 'fill', kernel: 'lanczos3' })
+      .raw()
+      .toBuffer()
 
-    let dilated = maskFull
-    for (let i = 0; i < DILATION_PIXELS; i++) {
-      dilated = this.dilate3x3(dilated, width, height)
-    }
+    const refiner = new MatteRefiner()
+    const refined = refiner.refine(maskSoft, contentW, contentH)
 
-    const feathered = await this.featherAlpha(dilated, width, height, FEATHER_SIGMA)
-    const { alpha, core } = this.buildFinalAlpha(maskFull, feathered, width, height)
+    const maskFull = this.upscaleMask(refined.alpha, contentW, contentH, width, height)
 
-    const decontaminated = this.decontaminateEdge(pixels, alpha, core, width, height)
+    const scale = Math.max(width / contentW, height / contentH)
+    const alpha = this.shapeAlpha(maskFull, width, height, this.edgeGain(refined.alpha, contentW, contentH, scale))
+
+    const { spikes, sawtooth, maxAlphaGradient, holesFilled, islandsRemoved } = refined.metrics
+    console.log(
+      `[BiRefNet] Refinamiento de matte — máscara: ${contentW}x${contentH} → ${width}x${height} ` +
+      `(escala ${scale.toFixed(2)}x), ` +
+      `picos: ${spikes}, dientes de sierra: ${sawtooth.toFixed(3)}, gradiente alpha máx: ${maxAlphaGradient.toFixed(2)}, ` +
+      `huecos rellenados: ${holesFilled}, islas eliminadas: ${islandsRemoved}`
+    )
+
+    const decontaminated = this.decontaminateEdge(pixels, alpha, width, height)
 
     const rgba = Buffer.alloc(width * height * 4)
 
@@ -407,7 +365,7 @@ export class BiRefNetService extends BackgroundRemover {
       rgba[i * 4] = decontaminated[i * 3]
       rgba[i * 4 + 1] = decontaminated[i * 3 + 1]
       rgba[i * 4 + 2] = decontaminated[i * 3 + 2]
-      rgba[i * 4 + 3] = Math.round(Math.max(0, Math.min(1, alpha[i])) * 255)
+      rgba[i * 4 + 3] = Math.round(clamp(alpha[i], 0, 1) * 255)
     }
 
     const outPng = await sharp(rgba, {

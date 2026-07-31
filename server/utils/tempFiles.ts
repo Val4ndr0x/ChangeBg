@@ -7,7 +7,7 @@ const CLEANUP_AGE_MS = 60 * 60 * 1000
 let lastCleanup = 0
 
 export function generateOutputFilename(): string {
-  return `${randomUUID()}.jpg`
+  return `${randomUUID()}.png`
 }
 
 export function getOutputPath(filename: string): string {

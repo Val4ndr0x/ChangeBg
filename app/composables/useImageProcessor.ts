@@ -20,6 +20,10 @@ export function useImageProcessor() {
       formData.append('image', selectedFile.value)
       formData.append('mode', backgroundMode.value)
 
+      if (backgroundMode.value !== 'black') {
+        formData.append('originalImage', selectedFile.value)
+      }
+
       const response = await fetch('/api/remove-background', {
         method: 'POST',
         body: formData
@@ -67,7 +71,7 @@ export function useImageProcessor() {
     if (!resultUrl.value) return
     const link = document.createElement('a')
     link.href = resultUrl.value
-    link.download = 'cambio-fondo.jpg'
+    link.download = 'cambio-fondo.png'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

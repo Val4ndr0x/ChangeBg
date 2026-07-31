@@ -1,7 +1,9 @@
 import sharp from 'sharp'
 import path from 'node:path'
 import fs from 'node:fs/promises'
-import type { CompositorInput, BackgroundMode } from '../../types/image'
+import { FaceDetector } from './FaceDetector'
+import type { DetectedFace } from './FaceDetector'
+import type { BackgroundMode, CompositorInput } from '../../types/image'
 
 const OUTPUT_DIR = path.resolve('public/output')
 const BACKGROUND_DIR = path.resolve('public/backgrounds')
@@ -9,11 +11,19 @@ const FRAMES_DIR = path.resolve('public/frames')
 
 const DEFAULT_BACKGROUND = path.join(BACKGROUND_DIR, 'default-black.jpg')
 const DEFAULT_FRAME = path.join(FRAMES_DIR, 'frame.png')
+
+// "Fondo original": un poco más amplio que la foto base para dar aire al recorte
 const BG_ZOOM_SCALE = 1.3
+// "Fondo ampliado": copia ampliada, desenfocada y oscurecida
+const OFFSET_SCALE = 2.2
+const FACE_TARGET_X_LEFT = 0.15
+const FACE_TARGET_X_RIGHT = 0.85
+const FACE_TARGET_Y = 0.42
 
 export class Composer {
   private backgroundPath: string
   private framePath: string
+  private faceDetector = new FaceDetector()
 
   constructor(backgroundPath?: string, framePath?: string) {
     this.backgroundPath = backgroundPath ?? DEFAULT_BACKGROUND
@@ -29,7 +39,9 @@ export class Composer {
     const [bgBuffer, frameBuffer] = await Promise.all([
       mode === 'original-overlay' && input.originalImage
         ? this.loadOriginalWithOverlay(input.originalImage, input.personWidth, input.personHeight)
-        : this.loadBackground(input.personWidth, input.personHeight),
+        : mode === 'original-offset' && input.originalImage
+          ? this.loadOffsetBackground(input.originalImage, input.personWidth, input.personHeight)
+          : this.loadBackground(input.personWidth, input.personHeight),
       this.loadFrame(input.personWidth, input.personHeight)
     ])
 
@@ -41,13 +53,7 @@ export class Composer {
         { input: input.personPng, top: 0, left: 0 },
         { input: frameBuffer, top: 0, left: 0 }
       ])
-      .jpeg({
-        quality: 95,
-        chromaSubsampling: '4:4:4',
-        trellisQuantisation: true,
-        overshootDeringing: true,
-        force: true
-      })
+      .png({ compressionLevel: 9 })
       .toBuffer()
 
     const resultMeta = await sharp(result).metadata()
@@ -83,19 +89,13 @@ export class Composer {
     const zoomed = await sharp(normalizedOriginal)
       .resize(Math.round(width * BG_ZOOM_SCALE), Math.round(height * BG_ZOOM_SCALE), { fit: 'cover', position: 'center' })
       .resize(width, height, { fit: 'cover', position: 'center' })
+      .blur(1.5)
       .toBuffer()
 
     const zoomMeta = await sharp(zoomed).metadata()
     console.log(`[Composer] Overlay zoom aplicado: ${zoomMeta.width}x${zoomMeta.height}`)
 
-    const overlay = await sharp({
-      create: {
-        width,
-        height,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0.8 }
-      }
-    }).png().toBuffer()
+    const overlay = await this.createDarkOverlay(width, height)
 
     const result = await sharp(zoomed)
       .composite([{ input: overlay, top: 0, left: 0 }])
@@ -106,6 +106,70 @@ export class Composer {
     console.log(`[Composer] Overlay + composición: ${resultMeta.width}x${resultMeta.height}`)
 
     return result
+  }
+
+  private async loadOffsetBackground(original: Buffer, width: number, height: number): Promise<Buffer> {
+    const normalizedOriginal = await this.normalizeOrientation(original, 'Original (offset)')
+
+    const faces = await this.faceDetector.detect(normalizedOriginal)
+    console.log(`[Composer] Rostros detectados en la imagen original: ${faces.length}`)
+
+    const offsetX = Math.round(width * (OFFSET_SCALE - 1) / 2)
+    const offsetY = Math.round(height * (OFFSET_SCALE - 1) / 2)
+
+    const face = faces[0]
+    const facePosition = face ? this.facePosition(face) : 'center'
+    console.log(`[Composer] Posición de rostro determinada: ${facePosition}`)
+
+    const offsetMap = {
+      left: { x: offsetX * -1, y: offsetY * -1 },
+      right: { x: offsetX, y: offsetY },
+      center: { x: 0, y: 0 }
+    }
+    const offset = offsetMap[facePosition]
+
+    const bg = await sharp(normalizedOriginal)
+      .resize(Math.round(width * OFFSET_SCALE), Math.round(height * OFFSET_SCALE), { fit: 'cover', position: 'center' })
+      .blur(6)
+      .extend({
+        top: offsetY,
+        bottom: offsetY,
+        left: offsetX,
+        right: offsetX,
+        background: { r: 0, g: 0, b: 0 }
+      })
+      .extract({
+        left: offsetX + offset.x,
+        top: offsetY + offset.y,
+        width,
+        height
+      })
+      .modulate({ brightness: 0.5 })
+      .blur(6)
+      .toBuffer()
+
+    const bgMeta = await sharp(bg).metadata()
+    console.log(`[Composer] Offset background listo: ${bgMeta.width}x${bgMeta.height}`)
+
+    return bg
+  }
+
+  private facePosition(face: DetectedFace): 'left' | 'right' | 'center' {
+    const x = face.centerX
+    if (x < FACE_TARGET_X_LEFT) return 'left'
+    if (x > FACE_TARGET_X_RIGHT) return 'right'
+    return 'center'
+  }
+
+  private async createDarkOverlay(width: number, height: number): Promise<Buffer> {
+    return sharp({
+      create: {
+        width,
+        height,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0.65 }
+      }
+    }).png().toBuffer()
   }
 
   private async loadBackground(width: number, height: number): Promise<Buffer> {

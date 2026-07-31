@@ -1,5 +1,6 @@
 import { BiRefNetService } from '../services/BiRefNetService'
 import { Composer } from '../services/Composer'
+import { autoFrameToPortrait } from '../utils/framing'
 import { ensureOutputDir, generateOutputFilename, getOutputPath, cleanupOldFiles } from '../utils/tempFiles'
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../types/image'
 import type { ApiResponse, BackgroundMode } from '../../types/image'
@@ -35,12 +36,11 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
       }
     }
 
-    const modeField = formData.find((f) => f.name === 'mode')
-    const mode: BackgroundMode = (modeField?.data?.toString() as BackgroundMode) ?? 'black'
+    const framedBuffer = await autoFrameToPortrait(imageBuffer)
 
     const remover = new BiRefNetService()
 
-    const removerPromise = remover.removeBackground(imageBuffer)
+    const removerPromise = remover.removeBackground(framedBuffer)
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Timeout: el procesamiento tomó demasiado tiempo')), TIMEOUT_MS)
     )
@@ -52,8 +52,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
       personPng: result.pngBuffer,
       personWidth: result.width,
       personHeight: result.height,
-      backgroundMode: mode,
-      originalImage: mode === 'original-overlay' ? imageBuffer : undefined
+      backgroundMode: (formData.find((f) => f.name === 'mode')?.data as unknown as Buffer)?.toString() as BackgroundMode | undefined,
+      originalImage: framedBuffer
     })
 
     await cleanupOldFiles()
