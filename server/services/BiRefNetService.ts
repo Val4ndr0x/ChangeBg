@@ -180,6 +180,60 @@ export class BiRefNetService extends BackgroundRemover {
     return out
   }
 
+  private cubicKernel(t: number): number {
+    const a = -0.5
+    const abs = t < 0 ? -t : t
+    const abs2 = abs * abs
+    const abs3 = abs2 * abs
+    if (abs <= 1) return (a + 2) * abs3 - (a + 3) * abs2 + 1
+    if (abs < 2) return a * abs3 - 5 * a * abs2 + 8 * a * abs - 4 * a
+    return 0
+  }
+
+  private resampleCubic(src: Float32Array, srcW: number, srcH: number, dstW: number, dstH: number): Float32Array {
+    const tmp = new Float32Array(dstW * srcH)
+    const sx = srcW / dstW
+
+    for (let y = 0; y < srcH; y++) {
+      const srcRow = y * srcW
+      const dstRow = y * dstW
+      for (let x = 0; x < dstW; x++) {
+        const fx = (x + 0.5) * sx - 0.5
+        const cx = Math.floor(fx)
+        const t = fx - cx
+        let sum = 0
+        let wSum = 0
+        for (let k = -1; k <= 2; k++) {
+          const w = this.cubicKernel(t - k)
+          sum += src[srcRow + clamp(cx + k, 0, srcW - 1)] * w
+          wSum += w
+        }
+        tmp[dstRow + x] = wSum > 0 ? sum / wSum : src[srcRow + clamp(cx, 0, srcW - 1)]
+      }
+    }
+
+    const out = new Float32Array(dstW * dstH)
+    const sy = srcH / dstH
+
+    for (let x = 0; x < dstW; x++) {
+      for (let y = 0; y < dstH; y++) {
+        const fy = (y + 0.5) * sy - 0.5
+        const cy = Math.floor(fy)
+        const t = fy - cy
+        let sum = 0
+        let wSum = 0
+        for (let k = -1; k <= 2; k++) {
+          const w = this.cubicKernel(t - k)
+          sum += tmp[clamp(cy + k, 0, srcH - 1) * dstW + x] * w
+          wSum += w
+        }
+        out[y * dstW + x] = wSum > 0 ? sum / wSum : tmp[clamp(cy, 0, srcH - 1) * dstW + x]
+      }
+    }
+
+    return out
+  }
+
   private upscaleMask(
     mask: Float32Array,
     srcW: number,
@@ -187,36 +241,8 @@ export class BiRefNetService extends BackgroundRemover {
     dstW: number,
     dstH: number
   ): Float32Array {
-    const tmp = new Float32Array(dstW * srcH)
-    const sx = srcW / dstW
-    for (let y = 0; y < srcH; y++) {
-      const srcRow = y * srcW
-      const dstRow = y * dstW
-      for (let x = 0; x < dstW; x++) {
-        const fx = clamp((x + 0.5) * sx - 0.5, 0, srcW - 1)
-        const x0 = Math.floor(fx)
-        const t = fx - x0
-        const xa = x0
-        const xb = x0 + 1 < srcW ? x0 + 1 : x0
-        tmp[dstRow + x] = mask[srcRow + xa] * (1 - t) + mask[srcRow + xb] * t
-      }
-    }
-
-    const out = new Float32Array(dstW * dstH)
-    const sy = srcH / dstH
-    for (let y = 0; y < dstH; y++) {
-      const fy = clamp((y + 0.5) * sy - 0.5, 0, srcH - 1)
-      const y0 = Math.floor(fy)
-      const t = fy - y0
-      const rowA = y0 * dstW
-      const rowB = (y0 + 1 < srcH ? y0 + 1 : y0) * dstW
-      const dstRow = y * dstW
-      for (let x = 0; x < dstW; x++) {
-        out[dstRow + x] = tmp[rowA + x] * (1 - t) + tmp[rowB + x] * t
-      }
-    }
-
-    return out
+    if (srcW === dstW && srcH === dstH) return Float32Array.from(mask)
+    return this.resampleCubic(mask, srcW, srcH, dstW, dstH)
   }
 
   private shapeAlpha(
@@ -252,7 +278,7 @@ export class BiRefNetService extends BackgroundRemover {
     const meanGrad = gradN > 0 ? gradAcc / gradN : 0.25
     const bandModelPx = meanGrad > 0.01 ? 1 / meanGrad : 4
     const bandFullPx = bandModelPx * scale
-    return clamp(bandFullPx / 2.2, 0.8, 2.2)
+    return clamp(bandFullPx / 2.2, 0.7, 1.35)
   }
 
   private decontaminateEdge(
@@ -319,9 +345,10 @@ export class BiRefNetService extends BackgroundRemover {
     for (let i = 0; i < size; i++) {
       const a = alpha[i]
       if (a >= 0.02 && a < CORE) {
-        out[i * 3] = rC[i]
-        out[i * 3 + 1] = gC[i]
-        out[i * 3 + 2] = bC[i]
+        const j = i * 3
+        out[j] = Math.round(rgb[j] * 0.2 + rC[i] * 0.8)
+        out[j + 1] = Math.round(rgb[j + 1] * 0.2 + gC[i] * 0.8)
+        out[j + 2] = Math.round(rgb[j + 2] * 0.2 + bC[i] * 0.8)
       }
     }
 

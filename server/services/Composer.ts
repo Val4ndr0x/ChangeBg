@@ -3,6 +3,7 @@ import path from 'node:path'
 import fs from 'node:fs/promises'
 import { FaceDetector } from './FaceDetector'
 import type { DetectedFace } from './FaceDetector'
+import { detectFrameWindow } from '../utils/frameWindow'
 import type { BackgroundMode, CompositorInput } from '../../types/image'
 
 const OUTPUT_DIR = path.resolve('public/output')
@@ -12,8 +13,13 @@ const FRAMES_DIR = path.resolve('public/frames')
 const DEFAULT_BACKGROUND = path.join(BACKGROUND_DIR, 'default-black.jpg')
 const DEFAULT_FRAME = path.join(FRAMES_DIR, 'frame.png')
 
-// "Fondo original": un poco más amplio que la foto base para dar aire al recorte
-const BG_ZOOM_SCALE = 1.3
+// Altura mínima del lienzo final, para que el marco (y el QR que contiene)
+// nunca se reduzca por debajo de una resolución legible, sin importar la
+// resolución de la foto de entrada (p. ej. capturas de cámara web en 720p).
+const MIN_CANVAS_HEIGHT = 2400
+
+// "Fondo original": misma foto de base (sin recorte extra), solo desenfocada
+const BG_BLUR_AMOUNT = 6
 // "Fondo ampliado": copia ampliada, desenfocada y oscurecida
 const OFFSET_SCALE = 2.2
 const FACE_TARGET_X_LEFT = 0.15
@@ -36,21 +42,30 @@ export class Composer {
     console.log(`[Composer] Iniciando composición — modo: ${mode}`)
     console.log(`[Composer] Dimensiones persona: ${input.personWidth}x${input.personHeight}`)
 
-    const [bgBuffer, frameBuffer] = await Promise.all([
+    const layout = await this.resolveLayout(input.personWidth, input.personHeight)
+    console.log(`[Composer] Lienzo adaptado al marco: ${layout.canvasWidth}x${layout.canvasHeight} — ventana: ${layout.windowWidth}x${layout.windowHeight} @ (${layout.windowLeft},${layout.windowTop})`)
+
+    const [bgBuffer, person, frameBuffer] = await Promise.all([
       mode === 'original-overlay' && input.originalImage
-        ? this.loadOriginalWithOverlay(input.originalImage, input.personWidth, input.personHeight)
+        ? this.loadOriginalWithOverlay(input.originalImage, layout.windowWidth, layout.windowHeight)
         : mode === 'original-offset' && input.originalImage
-          ? this.loadOffsetBackground(input.originalImage, input.personWidth, input.personHeight)
-          : this.loadBackground(input.personWidth, input.personHeight),
-      this.loadFrame(input.personWidth, input.personHeight)
+          ? this.loadOffsetBackground(input.originalImage, layout.windowWidth, layout.windowHeight)
+          : this.loadBackground(layout.windowWidth, layout.windowHeight),
+      this.fitPersonToWindow(input.personPng, input.personWidth, input.personHeight, layout.windowWidth, layout.windowHeight),
+      this.loadFrame(layout.canvasWidth, layout.canvasHeight)
     ])
 
-    const bgMeta = await sharp(bgBuffer).metadata()
-    console.log(`[Composer] Background listo para composición: ${bgMeta.width}x${bgMeta.height}`)
-
-    const result = await sharp(bgBuffer)
+    const result = await sharp({
+      create: {
+        width: layout.canvasWidth,
+        height: layout.canvasHeight,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      }
+    })
       .composite([
-        { input: input.personPng, top: 0, left: 0 },
+        { input: bgBuffer, top: layout.windowTop, left: layout.windowLeft },
+        { input: person.buffer, top: layout.windowTop + person.top, left: layout.windowLeft + person.left },
         { input: frameBuffer, top: 0, left: 0 }
       ])
       .png({ compressionLevel: 9 })
@@ -60,6 +75,66 @@ export class Composer {
     console.log(`[Composer] Composición final: ${resultMeta.width}x${resultMeta.height}`)
 
     return result
+  }
+
+  /**
+   * Calcula el lienzo final y la ventana donde debe verse la foto, a partir
+   * de la proporción real del marco (en vez de deformar el marco a la
+   * proporción de la foto). Si el marco no tiene ventana transparente
+   * detectable, se usa el tamaño de la persona como antes.
+   */
+  private async resolveLayout(personWidth: number, personHeight: number) {
+    try {
+      const window = await detectFrameWindow(this.framePath)
+      const frameAspect = window.frameWidth / window.frameHeight
+
+      const canvasHeight = Math.max(personHeight, MIN_CANVAS_HEIGHT)
+      const canvasWidth = Math.max(1, Math.round(canvasHeight * frameAspect))
+
+      const windowLeft = Math.round(window.x0 * canvasWidth)
+      const windowTop = Math.round(window.y0 * canvasHeight)
+      const windowWidth = Math.max(1, Math.round(window.x1 * canvasWidth) - windowLeft)
+      const windowHeight = Math.max(1, Math.round(window.y1 * canvasHeight) - windowTop)
+
+      return { canvasWidth, canvasHeight, windowLeft, windowTop, windowWidth, windowHeight }
+    } catch (error) {
+      console.log(`[Composer] No se pudo detectar la ventana del marco, se usa el lienzo de la persona: ${error}`)
+      return {
+        canvasWidth: personWidth,
+        canvasHeight: personHeight,
+        windowLeft: 0,
+        windowTop: 0,
+        windowWidth: personWidth,
+        windowHeight: personHeight
+      }
+    }
+  }
+
+  /**
+   * Escala la foto de la persona para que quepa completa dentro de la
+   * ventana del marco (sin recortarla ni deformarla) y la centra.
+   */
+  private async fitPersonToWindow(
+    personPng: Buffer,
+    personWidth: number,
+    personHeight: number,
+    windowWidth: number,
+    windowHeight: number
+  ): Promise<{ buffer: Buffer; left: number; top: number }> {
+    const scale = Math.min(windowWidth / personWidth, windowHeight / personHeight)
+    const targetWidth = Math.max(1, Math.round(personWidth * scale))
+    const targetHeight = Math.max(1, Math.round(personHeight * scale))
+
+    const buffer = await sharp(personPng)
+      .resize(targetWidth, targetHeight, { fit: 'fill' })
+      .png()
+      .toBuffer()
+
+    return {
+      buffer,
+      left: Math.round((windowWidth - targetWidth) / 2),
+      top: Math.round((windowHeight - targetHeight) / 2)
+    }
   }
 
   private async normalizeOrientation(imageBuffer: Buffer, label: string): Promise<Buffer> {
@@ -86,18 +161,17 @@ export class Composer {
   private async loadOriginalWithOverlay(original: Buffer, width: number, height: number): Promise<Buffer> {
     const normalizedOriginal = await this.normalizeOrientation(original, 'Original (overlay)')
 
-    const zoomed = await sharp(normalizedOriginal)
-      .resize(Math.round(width * BG_ZOOM_SCALE), Math.round(height * BG_ZOOM_SCALE), { fit: 'cover', position: 'center' })
-      .resize(width, height, { fit: 'cover', position: 'center' })
-      .blur(1.5)
+    const blurred = await sharp(normalizedOriginal)
+      .resize(width, height, { fit: 'contain', background: { r: 0, g: 0, b: 0 } })
+      .blur(BG_BLUR_AMOUNT)
       .toBuffer()
 
-    const zoomMeta = await sharp(zoomed).metadata()
-    console.log(`[Composer] Overlay zoom aplicado: ${zoomMeta.width}x${zoomMeta.height}`)
+    const blurredMeta = await sharp(blurred).metadata()
+    console.log(`[Composer] Fondo original desenfocado (sin zoom, sin recorte): ${blurredMeta.width}x${blurredMeta.height}`)
 
     const overlay = await this.createDarkOverlay(width, height)
 
-    const result = await sharp(zoomed)
+    const result = await sharp(blurred)
       .composite([{ input: overlay, top: 0, left: 0 }])
       .jpeg()
       .toBuffer()

@@ -1,9 +1,14 @@
+import path from 'node:path'
 import { BiRefNetService } from '../services/BiRefNetService'
 import { Composer } from '../services/Composer'
-import { autoFrameToPortrait } from '../utils/framing'
+import { autoFrameToRatio } from '../utils/framing'
+import { getFrameWindowRatio } from '../utils/frameWindow'
 import { ensureOutputDir, generateOutputFilename, getOutputPath, cleanupOldFiles } from '../utils/tempFiles'
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../types/image'
 import type { ApiResponse, BackgroundMode } from '../../types/image'
+
+const FRAME_PATH = path.resolve('public/frames/frame.png')
+const FALLBACK_RATIO = 3 / 4
 
 const TIMEOUT_MS = 90000
 
@@ -36,7 +41,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
       }
     }
 
-    const framedBuffer = await autoFrameToPortrait(imageBuffer)
+    const targetRatio = await getFrameWindowRatio(FRAME_PATH).catch(() => FALLBACK_RATIO)
+    const framedBuffer = await autoFrameToRatio(imageBuffer, targetRatio)
 
     const remover = new BiRefNetService()
 

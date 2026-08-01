@@ -160,7 +160,17 @@ let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const isCountingDown = computed(() => countdown.value !== null)
 
-const PORTRAIT_RATIO = 3 / 4
+const FALLBACK_FRAME_RATIO = 3 / 4
+const frameRatio = ref(FALLBACK_FRAME_RATIO)
+
+onMounted(async () => {
+  try {
+    const info = await $fetch<{ aspectRatio: number }>('/api/frame-info')
+    if (info?.aspectRatio > 0) frameRatio.value = info.aspectRatio
+  } catch {
+    frameRatio.value = FALLBACK_FRAME_RATIO
+  }
+})
 
 const videoContainerStyle = computed(() => {
   if (!videoDims.value) return {}
@@ -176,14 +186,15 @@ const guideStyle = computed(() => {
   if (!videoDims.value) return {}
   const { vw, vh } = videoDims.value
   const a = vw / vh
+  const target = frameRatio.value
 
-  if (a >= 1) {
-    const w = (PORTRAIT_RATIO / a) * 100
+  if (a >= target) {
+    const w = (target / a) * 100
     const left = (100 - w) / 2
     return { left: `${left}%`, width: `${w}%`, top: '0%', height: '100%' }
   }
 
-  const h = (a / PORTRAIT_RATIO) * 100
+  const h = (a / target) * 100
   const top = (100 - h) / 2
   return { top: `${top}%`, height: `${h}%`, left: '0%', width: '100%' }
 })
@@ -223,7 +234,7 @@ async function startCamera() {
 
   try {
     streamRef.value = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
       audio: false
     })
 
@@ -269,16 +280,17 @@ function doCapturePhoto() {
 
   const vw = video.videoWidth
   const vh = video.videoHeight
+  const target = frameRatio.value
   let cropX = 0
   let cropY = 0
   let cropW = vw
   let cropH = vh
 
-  if (vw / vh >= PORTRAIT_RATIO) {
-    cropW = Math.round(vh * PORTRAIT_RATIO)
+  if (vw / vh >= target) {
+    cropW = Math.round(vh * target)
     cropX = Math.round((vw - cropW) / 2)
   } else {
-    cropH = Math.round(vw / PORTRAIT_RATIO)
+    cropH = Math.round(vw / target)
     cropY = Math.round((vh - cropH) / 2)
   }
 
@@ -296,7 +308,7 @@ function doCapturePhoto() {
     const file = new File([blob], `camara-${Date.now()}.jpg`, { type: 'image/jpeg' })
     stopCamera()
     emit('fileSelected', file)
-  }, 'image/jpeg', 0.95)
+  }, 'image/jpeg', 1)
 }
 
 function stopCamera() {

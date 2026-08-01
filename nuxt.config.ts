@@ -4,6 +4,12 @@ export default defineNuxtConfig({
 
   modules: ['@nuxtjs/tailwindcss'],
 
+  vite: {
+    server: {
+      allowedHosts: ['.ngrok-free.app']
+    }
+  },
+
   nitro: {
     experimental: {
       asyncContext: true

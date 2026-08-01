@@ -1,16 +1,15 @@
 import sharp from 'sharp'
 import { FaceDetector } from '../services/FaceDetector'
 
-const PORTRAIT_RATIO = 3 / 4
-
 const faceDetector = new FaceDetector()
 
 /**
- * Encuadra la foto como la haría un celular: si la imagen es horizontal
- * (paisaje, típico de cámaras de PC), se recorta automáticamente a formato
- * vertical 3:4 centrado en el rostro. Las fotos ya verticales no se tocan.
+ * Recorta la foto (centrada en el rostro si se detecta) a la proporción
+ * objetivo, sin importar si esa proporción es más ancha o más alta que la
+ * imagen original. Se usa para que la foto coincida con la ventana del
+ * marco y no queden franjas negras al componer.
  */
-export async function autoFrameToPortrait(imageBuffer: Buffer): Promise<Buffer> {
+export async function autoFrameToRatio(imageBuffer: Buffer, targetRatio: number): Promise<Buffer> {
   const meta = await sharp(imageBuffer).metadata()
   const orientation = meta.orientation ?? 1
 
@@ -22,29 +21,47 @@ export async function autoFrameToPortrait(imageBuffer: Buffer): Promise<Buffer> 
   const { width, height } = await sharp(buffer).metadata()
   if (!width || !height) throw new Error('Could not read image dimensions')
 
-  if (height >= width) return buffer
+  const currentRatio = width / height
 
-  const cropW = Math.round(height * PORTRAIT_RATIO)
-  const cropH = height
+  if (Math.abs(currentRatio - targetRatio) < 0.01) return buffer
 
-  let cropLeft = Math.round((width - cropW) / 2)
+  const faces = await faceDetector.detect(buffer).catch((error) => {
+    console.log(`[Framing] Detección de rostro fallida, recorte centrado: ${error}`)
+    return []
+  })
+  const face = faces[0]
 
-  try {
-    const faces = await faceDetector.detect(buffer)
-    const face = faces[0]
+  if (currentRatio > targetRatio) {
+    const cropW = Math.round(height * targetRatio)
+    const cropH = height
+
+    let cropLeft = Math.round((width - cropW) / 2)
     if (face) {
       const left = Math.round(face.centerX * width - cropW / 2)
       cropLeft = Math.max(0, Math.min(width - cropW, left))
-      console.log(`[Framing] Rostro detectado, recorte en x=${cropLeft}`)
     }
-  } catch (error) {
-    console.log(`[Framing] Detección de rostro fallida, recorte centrado: ${error}`)
+
+    console.log(`[Framing] ${width}x${height} → ${cropW}x${cropH} (recorte horizontal), x=${cropLeft}`)
+
+    return sharp(buffer)
+      .extract({ left: cropLeft, top: 0, width: cropW, height: cropH })
+      .png()
+      .toBuffer()
   }
 
-  console.log(`[Framing] Paisaje ${width}x${height} → retrato ${cropW}x${cropH}, x=${cropLeft}`)
+  const cropH = Math.round(width / targetRatio)
+  const cropW = width
+
+  let cropTop = Math.round((height - cropH) / 2)
+  if (face) {
+    const top = Math.round(face.centerY * height - cropH / 2)
+    cropTop = Math.max(0, Math.min(height - cropH, top))
+  }
+
+  console.log(`[Framing] ${width}x${height} → ${cropW}x${cropH} (recorte vertical), y=${cropTop}`)
 
   return sharp(buffer)
-    .extract({ left: cropLeft, top: 0, width: cropW, height: cropH })
+    .extract({ left: 0, top: cropTop, width: cropW, height: cropH })
     .png()
     .toBuffer()
 }
