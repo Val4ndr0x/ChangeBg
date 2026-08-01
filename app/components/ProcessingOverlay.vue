@@ -13,8 +13,8 @@
           </svg>
         </div>
         <div class="text-center">
-          <p class="font-display text-lg font-bold text-white">Procesando tu foto...</p>
-          <p class="mt-1 text-sm text-brand-cyan">Eliminando el fondo y componiendo tu resultado</p>
+          <p class="font-display text-lg font-bold text-white">Preparando tu recuerdo...</p>
+          <p class="mt-1 text-sm text-brand-cyan">Ya casi está listo, un momento más</p>
         </div>
       </div>
     </div>

@@ -64,13 +64,13 @@
         </p>
 
         <h2 class="mt-6 font-display text-4xl sm:text-6xl font-extrabold italic tracking-tight text-white">
-          Vive la
-          <span class="text-brand-yellow not-italic">nueva</span>
-          experiencia
+          Vive el momento.
+          <span class="text-brand-yellow not-italic">Llévate</span>
+          el recuerdo.
         </h2>
 
         <p class="mx-auto mt-4 max-w-xl text-base sm:text-lg text-zinc-400">
-          Resultados con calidad de edición profesional para tu equipo y tus atletas.
+          Tómate una foto en el stand y llévate un recuerdo con el sello oficial de la Liga de Porrismo de Cundinamarca.
         </p>
 
         <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -80,7 +80,7 @@
             <svg class="w-4 h-4 text-brand-yellow" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
             </svg>
-            Edición profesional
+            Recuerdo de calidad
           </span>
           <span
             class="inline-flex items-center gap-2 rounded-full bg-brand-navy-light/60 px-4 py-2 text-sm font-semibold text-zinc-200 ring-1 ring-brand-cyan/25"
@@ -88,7 +88,7 @@
             <svg class="w-4 h-4 text-brand-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            Resultado en segundos
+            Listo en segundos
           </span>
           <span
             class="inline-flex items-center gap-2 rounded-full bg-brand-navy-light/60 px-4 py-2 text-sm font-semibold text-zinc-200 ring-1 ring-brand-cyan/25"
@@ -96,7 +96,7 @@
             <svg class="w-4 h-4 text-brand-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Descarga inmediata
+            Descárgala y compártela
           </span>
         </div>
       </div>
@@ -104,6 +104,15 @@
 
     <main class="relative max-w-3xl mx-auto px-4 pb-16">
       <div v-if="!processor.resultUrl.value" class="flex flex-col items-center gap-8">
+        <div class="text-center">
+          <p class="font-display text-sm font-bold uppercase tracking-widest text-brand-cyan">
+            Tu turno
+          </p>
+          <h3 class="mt-1 font-display text-2xl font-extrabold text-white">
+            Sonríe, es hora de tu foto
+          </h3>
+        </div>
+
         <ImageUploader
           :preview-url="processor.previewUrl.value"
           :error-message="processor.error.value"
@@ -116,6 +125,7 @@
           v-if="processor.previewUrl.value && !processor.isProcessing.value"
           class="flex flex-col items-center gap-4"
         >
+          <p class="text-sm font-semibold text-zinc-400">Elige el estilo de tu recuerdo</p>
           <div class="flex flex-wrap items-center justify-center gap-2">
             <button
               v-for="option in backgroundOptions"
@@ -139,7 +149,7 @@
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
             </svg>
-            Procesar imagen
+            ¡Quiero mi recuerdo!
           </button>
         </div>
       </div>
@@ -159,7 +169,7 @@
           Photo Liga <span class="text-brand-yellow">LPC</span>
           · Liga de Porrismo de Cundinamarca
         </p>
-        <p class="mt-1 text-xs text-zinc-600">Procesamiento profesional de imágenes</p>
+        <p class="mt-1 text-xs text-zinc-600">Tu recuerdo oficial de la temporada LPC</p>
       </div>
     </footer>
 
@@ -174,9 +184,7 @@ import type { BackgroundMode } from '../types/image'
 const processor = useImageProcessor()
 
 const backgroundOptions: { value: BackgroundMode; label: string }[] = [
-  { value: 'black', label: 'Fondo estándar' },
-  { value: 'original-overlay', label: 'Fondo original' },
-  { value: 'original-offset', label: 'Fondo ampliado' }
+  { value: 'original-overlay', label: '! Momento inolvidable ¡' },
 ]
 
 function onFileSelected(file: File) {

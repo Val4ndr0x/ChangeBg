@@ -24,34 +24,29 @@
     <template v-if="!previewUrl && !isCameraActive">
       <div class="flex flex-col items-center gap-4 p-8 text-center">
         <div class="relative w-16 h-16 rounded-full bg-brand-navy flex items-center justify-center ring-2 ring-brand-cyan/40">
-          <svg class="w-7 h-7 text-brand-yellow" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
+          <svg class="w-7 h-7 text-brand-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-cyan ring-2 ring-brand-navy" />
         </div>
         <div>
-          <p class="font-display text-lg font-bold text-white">Arrastra tu foto aquí</p>
-          <p class="mt-1 text-sm text-zinc-400">o haz clic para seleccionar un archivo</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="rounded-full bg-brand-navy px-3 py-1 text-xs font-semibold text-brand-cyan ring-1 ring-brand-cyan/25">JPG</span>
-          <span class="rounded-full bg-brand-navy px-3 py-1 text-xs font-semibold text-brand-cyan ring-1 ring-brand-cyan/25">PNG</span>
-          <span class="rounded-full bg-brand-navy px-3 py-1 text-xs font-semibold text-brand-cyan ring-1 ring-brand-cyan/25">WebP</span>
-          <span class="text-xs text-zinc-500">· Máx 30MB</span>
+          <p class="font-display text-lg font-bold text-white">Captura tu momento</p>
+          <p class="mt-1 text-sm text-zinc-400">Tómate la foto aquí mismo y llévate un recuerdo profesional</p>
         </div>
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-cyan/10 px-5 py-2.5 text-sm font-bold text-brand-cyan ring-1 ring-brand-cyan/30 transition hover:bg-brand-cyan/20"
+          class="inline-flex items-center gap-2 rounded-xl bg-brand-yellow px-6 py-3 font-display font-bold text-brand-navy shadow-lg shadow-brand-yellow/20 transition hover:brightness-105"
           :disabled="disabled"
           @click.stop="startCamera"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
           </svg>
-          Usar cámara
+          Tomar mi foto
         </button>
         <p v-if="cameraError" class="text-sm font-medium text-brand-red">{{ cameraError }}</p>
+        <p class="text-xs text-zinc-500">o haz clic aquí para subir una foto ya tomada</p>
       </div>
     </template>
 
@@ -110,7 +105,7 @@
     <div v-else class="relative w-full h-full p-4">
       <img
         :src="previewUrl"
-        alt="Preview"
+        alt="Tu foto"
         class="w-full max-h-[400px] object-contain rounded-xl"
       />
       <button

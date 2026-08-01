@@ -6,13 +6,13 @@
       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
       </svg>
-      ¡Listo! Tu foto está lista
+      ¡Tu recuerdo está listo!
     </div>
 
     <div class="relative w-full max-w-2xl rounded-3xl overflow-hidden bg-brand-navy-light/70 ring-2 ring-brand-cyan/25 shadow-xl shadow-brand-navy/60">
       <img
         :src="imageUrl"
-        alt="Resultado"
+        alt="Tu recuerdo de la Liga de Porrismo de Cundinamarca"
         class="w-full h-auto max-h-[600px] object-contain"
       />
       <div class="pointer-events-none absolute inset-x-0 top-0 h-1 stripe-energy" />
@@ -49,7 +49,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        Nueva imagen
+        Tomar otra foto
       </button>
     </div>
   </div>

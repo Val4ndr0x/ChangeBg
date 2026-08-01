@@ -1,4 +1,5 @@
 import sharp from 'sharp'
+import fs from 'node:fs/promises'
 
 export interface FrameWindow {
   frameWidth: number
@@ -13,15 +14,18 @@ export interface FrameWindow {
 const THUMB_WIDTH = 400
 const ALPHA_THRESHOLD = 10
 
-const cache = new Map<string, FrameWindow>()
+const cache = new Map<string, { mtimeMs: number; window: FrameWindow }>()
 
 /**
  * Detecta la ventana transparente de un marco PNG (donde debe verse la foto)
- * analizando el canal alfa. Se cachea por ruta de archivo.
+ * analizando el canal alfa. Se cachea por ruta de archivo, invalidando la
+ * caché si el archivo fue modificado (p. ej. al reemplazar el frame sin
+ * reiniciar el servidor).
  */
 export async function detectFrameWindow(framePath: string): Promise<FrameWindow> {
+  const stat = await fs.stat(framePath)
   const cached = cache.get(framePath)
-  if (cached) return cached
+  if (cached && cached.mtimeMs === stat.mtimeMs) return cached.window
 
   const meta = await sharp(framePath).metadata()
   const frameWidth = meta.width ?? 0
@@ -68,7 +72,7 @@ export async function detectFrameWindow(framePath: string): Promise<FrameWindow>
       }
     : { frameWidth, frameHeight, x0: 0, y0: 0, x1: 1, y1: 1 }
 
-  cache.set(framePath, window)
+  cache.set(framePath, { mtimeMs: stat.mtimeMs, window })
   return window
 }
 

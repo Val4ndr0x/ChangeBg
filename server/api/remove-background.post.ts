@@ -12,6 +12,8 @@ const FALLBACK_RATIO = 3 / 4
 
 const TIMEOUT_MS = 90000
 
+const remover = new BiRefNetService()
+
 export default defineEventHandler(async (event): Promise<ApiResponse> => {
   try {
     const formData = await readMultipartFormData(event)
@@ -43,8 +45,6 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
 
     const targetRatio = await getFrameWindowRatio(FRAME_PATH).catch(() => FALLBACK_RATIO)
     const framedBuffer = await autoFrameToRatio(imageBuffer, targetRatio)
-
-    const remover = new BiRefNetService()
 
     const removerPromise = remover.removeBackground(framedBuffer)
     const timeoutPromise = new Promise<never>((_, reject) =>

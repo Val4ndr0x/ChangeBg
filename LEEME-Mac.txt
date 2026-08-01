@@ -1,0 +1,45 @@
+ChangeBG - Instrucciones para Mac
+=================================
+
+1. Descomprime la carpeta si la recibiste como .zip.
+
+2. Haz doble click en el archivo:
+   "Instalar y Abrir ChangeBG.command"
+
+3. La primera vez tardara varios minutos: instala lo necesario
+   (Homebrew, Node.js, dependencias y modelos de IA) y al final
+   se abrira solo en tu navegador.
+
+   Las siguientes veces sera casi instantaneo: solo abre la app.
+
+4. Mientras uses ChangeBG, deja abierta la ventana negra de Terminal
+   que aparecio (es el "motor" de la app). Para cerrar la app, cierra
+   esa ventana.
+
+Si al hacer doble click macOS dice que "no se puede abrir porque es
+de un desarrollador no identificado" (o "Apple no pudo verificar que
+no contiene malware"):
+   - Haz click derecho (o Control + click) sobre el archivo
+     "Instalar y Abrir ChangeBG.command"
+   - Elige "Abrir"
+   - Confirma con el boton "Abrir" en el aviso
+   - Esto solo hace falta la primera vez.
+
+Si el paso anterior no muestra un boton "Abrir" (macOS Ventura, Sonoma
+o mas nuevo), hazlo desde Configuracion del Sistema:
+   - Ve a Configuracion del Sistema > Privacidad y Seguridad
+   - Baja hasta la seccion "Seguridad": debe aparecer un aviso que
+     dice que "Instalar y Abrir ChangeBG.command" fue bloqueado
+   - Haz click en "Abrir de todas formas" y confirma con tu
+     contraseña o Touch ID
+   - Vuelve a hacer doble click en el archivo, ya deberia abrir.
+
+Si en vez de ejecutarse se abre un editor de texto:
+   - Abre la app "Terminal" (Lupa arriba a la derecha > escribe Terminal)
+   - Escribe:  chmod +x
+   - Deja un espacio despues, arrastra el archivo .command a la ventana
+     de Terminal y presiona Enter.
+   - Ahora vuelve a hacer doble click en el archivo, ya deberia funcionar.
+
+Requisitos: Mac con macOS y conexion a internet (solo necesaria la
+primera vez, para instalar todo y descargar los modelos de IA).

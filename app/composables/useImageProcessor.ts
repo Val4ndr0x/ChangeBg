@@ -6,7 +6,7 @@ export function useImageProcessor() {
   const resultUrl = ref<string | null>(null)
   const previewUrl = ref<string | null>(null)
   const selectedFile = ref<File | null>(null)
-  const backgroundMode = ref<BackgroundMode>('black')
+  const backgroundMode = ref<BackgroundMode>('original-overlay')
 
   async function process(): Promise<void> {
     if (!selectedFile.value) return

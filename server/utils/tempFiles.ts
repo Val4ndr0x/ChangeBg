@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-const OUTPUT_DIR = path.resolve('public/output')
+const OUTPUT_DIR = path.resolve('server/output')
 const CLEANUP_AGE_MS = 60 * 60 * 1000
 let lastCleanup = 0
 
