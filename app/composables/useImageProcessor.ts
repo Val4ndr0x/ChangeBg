@@ -77,22 +77,22 @@ export function useImageProcessor() {
     document.body.removeChild(link)
   }
 
-  function print(): void {
+  async function print(): Promise<void> {
     if (!resultUrl.value) return
-    const w = window.open('', '_blank', 'width=800,height=600')
-    if (!w) {
-      error.value = 'Permite ventanas emergentes para imprimir.'
-      return
+
+    const filename = resultUrl.value.split('/').pop()
+
+    try {
+      const response = await fetch('/api/open-in-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename })
+      })
+
+      if (!response.ok) throw new Error('No se pudo abrir la imagen')
+    } catch {
+      error.value = 'No se pudo abrir la imagen para imprimir.'
     }
-    const html = `<!doctype html><html><head><title>Imprimir</title><style>
-      *{margin:0;padding:0}
-      html,body{height:100%}
-      body{display:flex;align-items:center;justify-content:center;background:#fff}
-      img{max-width:100%;max-height:100%;}
-    </style></head><body><img src="${resultUrl.value}" onload="this.ownerDocument.defaultView.print();"/></body></html>`
-    w.document.open()
-    w.document.write(html)
-    w.document.close()
   }
 
   function reset(): void {
