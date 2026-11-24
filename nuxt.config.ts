@@ -24,18 +24,25 @@ export default defineNuxtConfig({
       theme: {
         extend: {
           colors: {
+            // Colores editables desde el panel "Diseño" (variables en useBranding.ts).
             brand: {
-              navy: '#051F43',
-              'navy-light': '#0B2A5C',
-              'navy-soft': '#102F5E',
-              yellow: '#FFF200',
-              cyan: '#00AEEF',
-              red: '#ED2024'
+              bg: 'rgb(var(--brand-bg) / <alpha-value>)',
+              surface: 'rgb(var(--brand-surface) / <alpha-value>)',
+              primary: 'rgb(var(--brand-primary) / <alpha-value>)',
+              secondary: 'rgb(var(--brand-secondary) / <alpha-value>)',
+              accent: 'rgb(var(--brand-accent) / <alpha-value>)'
             }
           },
+          // Tipografía y redondeo cambian con la plantilla de diseño del evento.
           fontFamily: {
-            display: ['Poppins', 'Inter', 'sans-serif'],
-            sans: ['Inter', 'system-ui', 'sans-serif']
+            display: ['var(--font-display)'],
+            sans: ['var(--font-body)']
+          },
+          borderRadius: {
+            lg: 'calc(var(--radius) * 0.5)',
+            xl: 'calc(var(--radius) * 0.75)',
+            '2xl': 'var(--radius)',
+            '3xl': 'calc(var(--radius) * 1.5)'
           }
         }
       }

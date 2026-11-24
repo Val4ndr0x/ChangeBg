@@ -4,6 +4,7 @@ import fs from 'node:fs/promises'
 import { FaceDetector } from './FaceDetector'
 import type { DetectedFace } from './FaceDetector'
 import { detectFrameWindow } from '../utils/frameWindow'
+import { FRAME_HEIGHT } from '../utils/frames'
 import type { BackgroundMode, CompositorInput } from '../../types/image'
 
 const OUTPUT_DIR = path.resolve('public/output')
@@ -13,10 +14,14 @@ const FRAMES_DIR = path.resolve('public/frames')
 const DEFAULT_BACKGROUND = path.join(BACKGROUND_DIR, 'default-black.jpg')
 const DEFAULT_FRAME = path.join(FRAMES_DIR, 'frame.png')
 
-// Altura mínima del lienzo final, para que el marco (y el QR que contiene)
-// nunca se reduzca por debajo de una resolución legible, sin importar la
-// resolución de la foto de entrada (p. ej. capturas de cámara web en 720p).
-const MIN_CANVAS_HEIGHT = 2400
+// Altura fija del lienzo final (~600 DPI en 10x15). Los marcos se guardan a
+// esta misma altura (ver utils/frames.ts), así el marco (y su QR) nunca se
+// reescala, y una foto de cámara grande no infla el lienzo ni la RAM.
+const CANVAS_HEIGHT = FRAME_HEIGHT
+
+// El marco ya redimensionado se guarda en memoria y solo se recalcula si
+// cambia el archivo o el tamaño del lienzo.
+const frameCache = new Map<string, { key: string; buffer: Buffer }>()
 
 // "Fondo original": misma foto de base (sin recorte extra), solo desenfocada
 const BG_BLUR_AMOUNT = 6
@@ -68,7 +73,7 @@ export class Composer {
         { input: person.buffer, top: layout.windowTop + person.top, left: layout.windowLeft + person.left },
         { input: frameBuffer, top: 0, left: 0 }
       ])
-      .png({ compressionLevel: 9 })
+      .png({ compressionLevel: 6 })
       .toBuffer()
 
     const resultMeta = await sharp(result).metadata()
@@ -88,7 +93,7 @@ export class Composer {
       const window = await detectFrameWindow(this.framePath)
       const frameAspect = window.frameWidth / window.frameHeight
 
-      const canvasHeight = Math.max(personHeight, MIN_CANVAS_HEIGHT)
+      const canvasHeight = CANVAS_HEIGHT
       const canvasWidth = Math.max(1, Math.round(canvasHeight * frameAspect))
 
       const windowLeft = Math.round(window.x0 * canvasWidth)
@@ -274,11 +279,20 @@ export class Composer {
 
   private async loadFrame(width: number, height: number): Promise<Buffer> {
     try {
-      await fs.access(this.framePath)
-      const frame = await sharp(this.framePath)
-        .resize(width, height, { fit: 'fill' })
-        .png()
-        .toBuffer()
+      const stat = await fs.stat(this.framePath)
+      const key = `${stat.mtimeMs}:${width}x${height}`
+      const cached = frameCache.get(this.framePath)
+      if (cached && cached.key === key) return cached.buffer
+
+      const meta = await sharp(this.framePath).metadata()
+      const frame = meta.width === width && meta.height === height
+        ? await fs.readFile(this.framePath)
+        : await sharp(this.framePath)
+            .resize(width, height, { fit: 'fill' })
+            .png({ compressionLevel: 1 })
+            .toBuffer()
+
+      frameCache.set(this.framePath, { key, buffer: frame })
       return frame
     } catch {
       return this.generateFrame(width, height)

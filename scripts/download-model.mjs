@@ -12,6 +12,11 @@ const MODELS = [
     url: 'https://github.com/ZhengPeng7/BiRefNet/releases/download/v1/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx'
   },
   {
+    name: 'MODNet (recorte ligero, modo para PCs modestos)',
+    file: 'modnet.onnx',
+    url: 'https://huggingface.co/Xenova/modnet/resolve/main/onnx/model.onnx'
+  },
+  {
     name: 'YuNet (detección de rostro)',
     file: 'face_detection_yunet.onnx',
     url: 'https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx'

@@ -7,6 +7,9 @@ export interface ProcessedImage {
 
 export type BackgroundMode = 'black' | 'original-overlay' | 'original-offset'
 
+/** 'ligero' = MODNet (poca RAM), 'calidad' = BiRefNet (mejor borde, mucha RAM) */
+export type Engine = 'ligero' | 'calidad'
+
 export interface BackgroundRemoverResult {
   pngBuffer: Buffer
   width: number
@@ -29,7 +32,7 @@ export interface ProcessingResult {
 export interface ProcessingError {
   success: false
   message: string
-  code: 'EMPTY_FILE' | 'FILE_TOO_LARGE' | 'UNSUPPORTED_FORMAT' | 'MODEL_FAILURE' | 'SHARP_ERROR' | 'TIMEOUT' | 'INTERNAL_ERROR'
+  code: 'EMPTY_FILE' | 'LOW_MEMORY' | 'FILE_TOO_LARGE' | 'UNSUPPORTED_FORMAT' | 'MODEL_FAILURE' | 'SHARP_ERROR' | 'TIMEOUT' | 'INTERNAL_ERROR'
 }
 
 export type ApiResponse = ProcessingResult | ProcessingError

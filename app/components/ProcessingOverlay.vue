@@ -2,19 +2,19 @@
   <Transition name="fade">
     <div
       v-if="visible"
-      class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-brand-navy/90 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-brand-bg/90 backdrop-blur-sm"
     >
       <div class="relative flex flex-col items-center gap-6">
         <div class="relative w-16 h-16">
-          <div class="absolute inset-0 rounded-full border-4 border-brand-cyan/20 border-t-brand-cyan animate-spin" />
-          <div class="absolute inset-2 rounded-full border-4 border-brand-yellow/20 border-b-brand-yellow animate-spin-reverse" />
-          <svg class="absolute inset-0 m-auto w-6 h-6 text-brand-yellow sparkle" fill="currentColor" viewBox="0 0 24 24">
+          <div class="absolute inset-0 rounded-full border-4 border-brand-secondary/20 border-t-brand-secondary animate-spin" />
+          <div class="absolute inset-2 rounded-full border-4 border-brand-primary/20 border-b-brand-primary animate-spin-reverse" />
+          <svg class="absolute inset-0 m-auto w-6 h-6 text-brand-primary sparkle" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
           </svg>
         </div>
         <div class="text-center">
-          <p class="font-display text-lg font-bold text-white">Preparando tu recuerdo...</p>
-          <p class="mt-1 text-sm text-brand-cyan">Ya casi está listo, un momento más</p>
+          <p class="font-display text-lg font-bold text-white"><BrandText k="processingTitle" /></p>
+          <p class="mt-1 text-sm text-brand-secondary"><BrandText k="processingSubtitle" /></p>
         </div>
       </div>
     </div>
@@ -25,6 +25,8 @@
 defineProps<{
   visible: boolean
 }>()
+
+const { texts: t } = useBranding()
 </script>
 
 <style scoped>

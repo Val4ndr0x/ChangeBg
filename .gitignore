@@ -26,3 +26,15 @@ logs
 server/models/*.onnx
 server/output/
 public/output/
+
+# Marcos subidos desde la app
+server/frames/
+
+# Diseños de eventos y logos subidos desde la app
+server/branding/
+
+# Videos slow motion generados y música
+server/slowmo/
+
+# Videos de salida (pesados, generados)
+videosslowmotion/

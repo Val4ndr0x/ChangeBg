@@ -3,10 +3,10 @@
     class="relative flex flex-col items-center justify-center w-full min-h-[320px] rounded-3xl border-2 border-dashed transition-colors cursor-pointer"
     :class="[
       isDragOver
-        ? 'border-brand-yellow bg-brand-yellow/5 ring-4 ring-brand-yellow/10'
+        ? 'border-brand-primary bg-brand-primary/5 ring-4 ring-brand-primary/10'
         : hasError
-          ? 'border-brand-red bg-brand-red/5'
-          : 'border-brand-cyan/40 hover:border-brand-cyan bg-brand-navy-light/50'
+          ? 'border-brand-accent bg-brand-accent/5'
+          : 'border-brand-secondary/40 hover:border-brand-secondary bg-brand-surface/50'
     ]"
     @dragover.prevent="isDragOver = true"
     @dragleave.prevent="isDragOver = false"
@@ -23,36 +23,36 @@
 
     <template v-if="!previewUrl && !isCameraActive">
       <div class="flex flex-col items-center gap-4 p-8 text-center">
-        <div class="relative w-16 h-16 rounded-full bg-brand-navy flex items-center justify-center ring-2 ring-brand-cyan/40">
-          <svg class="w-7 h-7 text-brand-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="relative w-16 h-16 rounded-full bg-brand-bg flex items-center justify-center ring-2 ring-brand-secondary/40">
+          <svg class="w-7 h-7 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-cyan ring-2 ring-brand-navy" />
+          <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-secondary ring-2 ring-brand-bg" />
         </div>
         <div>
-          <p class="font-display text-lg font-bold text-white">Captura tu momento</p>
-          <p class="mt-1 text-sm text-zinc-400">Tómate la foto aquí mismo y llévate un recuerdo profesional</p>
+          <p class="font-display text-lg font-bold text-white"><BrandText k="uploaderTitle" /></p>
+          <p class="mt-1 text-sm text-zinc-400"><BrandText k="uploaderSubtitle" /></p>
         </div>
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-yellow px-6 py-3 font-display font-bold text-brand-navy shadow-lg shadow-brand-yellow/20 transition hover:brightness-105"
+          class="inline-flex items-center gap-2 btn-primary rounded-xl bg-brand-primary px-6 py-3 font-display font-bold text-brand-bg shadow-lg shadow-brand-primary/20 transition hover:brightness-105"
           :disabled="disabled"
           @click.stop="startCamera"
         >
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
           </svg>
-          Tomar mi foto
+          <BrandText k="cameraButton" />
         </button>
-        <p v-if="cameraError" class="text-sm font-medium text-brand-red">{{ cameraError }}</p>
-        <p class="text-xs text-zinc-500">o haz clic aquí para subir una foto ya tomada</p>
+        <p v-if="cameraError" class="text-sm font-medium text-brand-accent">{{ cameraError }}</p>
+        <p class="text-xs text-zinc-500"><BrandText k="uploadHint" /></p>
       </div>
     </template>
 
     <div v-else-if="isCameraActive" class="relative w-full p-4" @click.stop @dragover.prevent @drop.prevent>
       <div
-        class="relative mx-auto w-full overflow-hidden rounded-2xl bg-black ring-1 ring-brand-cyan/30"
+        class="relative mx-auto w-full overflow-hidden rounded-2xl bg-black ring-1 ring-brand-secondary/30"
         :style="videoContainerStyle"
       >
         <video
@@ -65,39 +65,39 @@
         />
         <div v-if="videoDims" class="absolute inset-0 pointer-events-none">
           <div
-            class="absolute border-2 border-brand-yellow rounded-xl shadow-[0_0_0_9999px_rgba(5,31,67,0.45)]"
+            class="absolute border-2 border-brand-primary rounded-xl guide-mask"
             :style="guideStyle"
           />
         </div>
 
         <div
           v-if="countdown !== null"
-          class="absolute inset-0 flex items-center justify-center bg-brand-navy/60 backdrop-blur-sm pointer-events-none"
+          class="absolute inset-0 flex items-center justify-center bg-brand-bg/60 backdrop-blur-sm pointer-events-none"
         >
-          <span class="font-display text-8xl font-black text-brand-yellow drop-shadow-lg">{{ countdown }}</span>
+          <span class="font-display text-8xl font-black text-brand-primary drop-shadow-lg">{{ countdown }}</span>
         </div>
       </div>
 
-      <p v-if="cameraError" class="mt-3 text-sm font-medium text-brand-red text-center">{{ cameraError }}</p>
+      <p v-if="cameraError" class="mt-3 text-sm font-medium text-brand-accent text-center">{{ cameraError }}</p>
 
       <div class="mt-4 flex items-center justify-center gap-3">
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-navy px-6 py-2.5 text-sm font-bold text-zinc-300 ring-1 ring-zinc-600 transition hover:text-white"
+          class="inline-flex items-center gap-2 rounded-xl bg-brand-bg px-6 py-2.5 text-sm font-bold text-zinc-300 ring-1 ring-zinc-600 transition hover:text-white"
           @click="stopCamera"
         >
           Cancelar
         </button>
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-yellow px-8 py-2.5 font-display font-bold text-brand-navy shadow-lg shadow-brand-yellow/20 transition hover:brightness-105"
+          class="inline-flex items-center gap-2 btn-primary rounded-xl bg-brand-primary px-8 py-2.5 font-display font-bold text-brand-bg shadow-lg shadow-brand-primary/20 transition hover:brightness-105"
           :disabled="isCountingDown"
           @click="capturePhoto"
         >
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z" />
           </svg>
-          Tomar foto
+          <BrandText k="shutterButton" />
         </button>
       </div>
     </div>
@@ -110,7 +110,7 @@
       />
       <button
         type="button"
-        class="absolute top-6 right-6 w-8 h-8 rounded-full bg-brand-navy/90 flex items-center justify-center text-brand-red hover:bg-brand-navy ring-1 ring-brand-red/40 transition-colors"
+        class="absolute top-6 right-6 w-8 h-8 rounded-full bg-brand-bg/90 flex items-center justify-center text-brand-accent hover:bg-brand-bg ring-1 ring-brand-accent/40 transition-colors"
         :disabled="disabled"
         @click.stop="resetImage"
       >
@@ -122,9 +122,9 @@
 
     <div
       v-if="hasError"
-      class="absolute bottom-0 left-0 right-0 px-4 py-3 bg-brand-red/10 border-t border-brand-red/25 rounded-b-3xl"
+      class="absolute bottom-0 left-0 right-0 px-4 py-3 bg-brand-accent/10 border-t border-brand-accent/25 rounded-b-3xl"
     >
-      <p class="text-sm font-medium text-brand-red">{{ errorMessage }}</p>
+      <p class="text-sm font-medium text-brand-accent">{{ errorMessage }}</p>
     </div>
   </div>
 </template>
@@ -140,6 +140,8 @@ const emit = defineEmits<{
   fileSelected: [file: File]
   reset: []
 }>()
+
+const { texts: t, brand } = useBranding()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDragOver = ref(false)
@@ -158,14 +160,19 @@ const isCountingDown = computed(() => countdown.value !== null)
 const FALLBACK_FRAME_RATIO = 3 / 4
 const frameRatio = ref(FALLBACK_FRAME_RATIO)
 
-onMounted(async () => {
+async function loadFrameRatio() {
   try {
     const info = await $fetch<{ aspectRatio: number }>('/api/frame-info')
     if (info?.aspectRatio > 0) frameRatio.value = info.aspectRatio
   } catch {
     frameRatio.value = FALLBACK_FRAME_RATIO
   }
-})
+}
+
+// Se recarga cuando se sube o cambia el marco (ver FrameManager.vue).
+const frameVersion = useState('frame-version', () => 0)
+watch(frameVersion, loadFrameRatio)
+onMounted(loadFrameRatio)
 
 const videoContainerStyle = computed(() => {
   if (!videoDims.value) return {}
@@ -255,7 +262,12 @@ function onVideoLoaded() {
 
 function capturePhoto() {
   if (countdown.value !== null) return
-  countdown.value = 5
+  const seconds = brand.value.countdown
+  if (seconds <= 0) {
+    doCapturePhoto()
+    return
+  }
+  countdown.value = seconds
   countdownTimer = setInterval(() => {
     if (countdown.value === null) return
     if (countdown.value <= 1) {
@@ -320,3 +332,9 @@ onUnmounted(() => {
   stopCamera()
 })
 </script>
+
+<style scoped>
+.guide-mask {
+  box-shadow: 0 0 0 9999px rgb(var(--brand-bg) / 0.45);
+}
+</style>

@@ -46,6 +46,12 @@ if ! command -v node >/dev/null 2>&1; then
   brew install node || fail "No se pudo instalar Node.js."
 fi
 
+# ffmpeg (modulo Slow Motion)
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "Instalando ffmpeg (una sola vez)..."
+  brew install ffmpeg || fail "No se pudo instalar ffmpeg."
+fi
+
 echo "Usando Node $(node -v)"
 echo ""
 
@@ -54,9 +60,9 @@ echo "Instalando dependencias del proyecto (puede tardar unos minutos la primera
 npm install || fail "Fallo 'npm install'. Si el error menciona compilacion, ejecuta en Terminal: xcode-select --install"
 
 # 4) Modelos de IA (recorte de persona / deteccion de rostro)
-if [ ! -s "server/models/birefnet.onnx" ] || [ ! -s "server/models/face_detection_yunet.onnx" ]; then
+if [ ! -s "server/models/birefnet.onnx" ] || [ ! -s "server/models/face_detection_yunet.onnx" ] || [ ! -s "server/models/modnet.onnx" ]; then
   echo ""
-  echo "Descargando modelos de IA (~220MB, solo la primera vez)..."
+  echo "Descargando modelos de IA (~250MB, solo la primera vez)..."
   npm run download-model || fail "No se pudieron descargar los modelos de IA. Revisa tu conexion a internet."
 fi
 

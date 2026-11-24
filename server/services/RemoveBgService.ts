@@ -13,6 +13,8 @@ export class RemoveBgService extends BackgroundRemover {
     return 'remove.bg'
   }
 
+  async release(): Promise<void> {}
+
   async removeBackground(imageBuffer: Buffer): Promise<BackgroundRemoverResult> {
     if (!this.apiKey) {
       throw new Error('Remove.bg API key not configured. Set NUXT_REMOVE_BG_API_KEY environment variable.')

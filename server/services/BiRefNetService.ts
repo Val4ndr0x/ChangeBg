@@ -25,6 +25,11 @@ export class BiRefNetService extends BackgroundRemover {
     return 'BiRefNet (ONNX)'
   }
 
+  async release(): Promise<void> {
+    await this.session?.release()
+    this.session = null
+  }
+
   async removeBackground(imageBuffer: Buffer): Promise<BackgroundRemoverResult> {
     const session = await this.getSession()
 
@@ -87,7 +92,13 @@ export class BiRefNetService extends BackgroundRemover {
       )
     }
 
-    this.session = await InferenceSession.create(MODEL_PATH)
+    // Pocos hilos y sin "arena" de memoria: más lento, pero no acapara toda
+    // la RAM ni el CPU del equipo.
+    this.session = await InferenceSession.create(MODEL_PATH, {
+      intraOpNumThreads: 2,
+      interOpNumThreads: 1,
+      enableCpuMemArena: false
+    })
 
     const inputNames = this.session.inputNames
     const outputNames = this.session.outputNames

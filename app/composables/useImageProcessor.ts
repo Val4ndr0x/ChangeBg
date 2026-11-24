@@ -1,4 +1,6 @@
-import type { ApiResponse, BackgroundMode } from '../../types/image'
+import type { ApiResponse, BackgroundMode, Engine } from '../../types/image'
+
+const ENGINE_KEY = 'changebg-engine'
 
 export function useImageProcessor() {
   const isProcessing = ref(false)
@@ -7,6 +9,20 @@ export function useImageProcessor() {
   const previewUrl = ref<string | null>(null)
   const selectedFile = ref<File | null>(null)
   const backgroundMode = ref<BackgroundMode>('original-overlay')
+  // Modo ligero por defecto: el de alta calidad puede colgar PCs de 8 GB.
+  const engine = ref<Engine>('ligero')
+
+  onMounted(() => {
+    try {
+      if (localStorage.getItem(ENGINE_KEY) === 'calidad') engine.value = 'calidad'
+    } catch {}
+  })
+
+  watch(engine, (value) => {
+    try {
+      localStorage.setItem(ENGINE_KEY, value)
+    } catch {}
+  })
 
   async function process(): Promise<void> {
     if (!selectedFile.value) return
@@ -19,6 +35,7 @@ export function useImageProcessor() {
       const formData = new FormData()
       formData.append('image', selectedFile.value)
       formData.append('mode', backgroundMode.value)
+      formData.append('engine', engine.value)
 
       if (backgroundMode.value !== 'black') {
         formData.append('originalImage', selectedFile.value)
@@ -67,11 +84,12 @@ export function useImageProcessor() {
     return previewUrl.value
   }
 
-  function download(): void {
+  function download(filename = 'recuerdo'): void {
     if (!resultUrl.value) return
+    const safeName = filename.replace(/[\\/:*?"<>|]+/g, '').trim() || 'recuerdo'
     const link = document.createElement('a')
     link.href = resultUrl.value
-    link.download = 'cambio-fondo.png'
+    link.download = `${safeName.replace(/\.png$/i, '')}.png`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -119,6 +137,7 @@ export function useImageProcessor() {
     previewUrl,
     selectedFile,
     backgroundMode,
+    engine,
     process,
     setFile,
     download,
